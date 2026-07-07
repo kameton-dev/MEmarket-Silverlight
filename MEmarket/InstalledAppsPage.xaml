@@ -1,0 +1,84 @@
+﻿<phone:PhoneApplicationPage
+    x:Class="MEmarket.InstalledAppsPage"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    mc:Ignorable="d"
+    shell:SystemTray.IsVisible="True">
+
+    <phone:PhoneApplicationPage.Resources>
+
+        <!-- Шаблон ОБНОВЛЕНИЯ -->
+        <DataTemplate x:Key="WpStoreAppItemTemplate">
+            <Grid Margin="12,0,12,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="80" Height="80" Background="{StaticResource PhoneAccentBrush}" Margin="0,0,8,0" VerticalAlignment="Top">
+                    <Image Source="{Binding Icon}" Width="80" Height="80" Stretch="UniformToFill" HorizontalAlignment="Stretch"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                    <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="WordEllipsis" Style="{StaticResource PhoneTextExtraLargeStyle}" FontSize="{StaticResource PhoneFontSizeLarge}" Margin="0,0,12,0" />
+                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressValue}" Height="4" Margin="0,8,0,6" Foreground="{StaticResource PhoneAccentBrush}" Background="#33FFFFFF" Width="250" HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" MaxHeight="54" TextTrimming="WordEllipsis" Margin="0,2,10,0" Style="{StaticResource PhoneTextSubtleStyle}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Шаблон ЖУРНАЛ -->
+        <DataTemplate x:Key="WpStoreInstalledItemTemplate">
+            <Grid Margin="12,0,12,24" Background="Transparent">
+                <toolkit:ContextMenuService.ContextMenu>
+                    <toolkit:ContextMenu>
+                        <toolkit:MenuItem Header="посмотреть приложение" Click="ViewAppDetails_Click"/>
+                        <toolkit:MenuItem Header="забыть" Click="ForgetApp_Click"/>
+                    </toolkit:ContextMenu>
+                </toolkit:ContextMenuService.ContextMenu>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="80" Height="80" Background="{StaticResource PhoneAccentBrush}" Margin="0,0,16,0" VerticalAlignment="Top">
+                    <Image Source="{Binding Icon}" Width="80" Height="80" Stretch="UniformToFill"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="WordEllipsis" Style="{StaticResource PhoneTextExtraLargeStyle}" FontSize="{StaticResource PhoneFontSizeLarge}" Margin="0,0,12,0" />
+                    <TextBlock Text="{Binding InstalledVersionText}" TextWrapping="Wrap" MaxHeight="54" TextTrimming="WordEllipsis" Margin="0,2,10,0" Style="{StaticResource PhoneTextSubtleStyle}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+    </phone:PhoneApplicationPage.Resources>
+
+    <Grid x:Name="LayoutRoot" Background="Transparent">
+        <phone:Pivot Title="ЗАГРУЗКИ И ОБНОВЛЕНИЯ">
+            <phone:PivotItem Header="обновления">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Button x:Name="CheckUpdatesButton" Content="проверить наличие обновлений" Margin="0" Click="CheckUpdatesButton_Click" HorizontalAlignment="Left"/>
+                    <ListBox x:Name="UpdatesListBox" Grid.Row="1" ItemTemplate="{StaticResource WpStoreAppItemTemplate}" SelectionChanged="UpdatesListBox_SelectionChanged"/>
+                </Grid>
+            </phone:PivotItem>
+
+            <phone:PivotItem Header="журнал">
+                <Grid Margin="0,12,0,0">
+                    <ListBox x:Name="InstalledListBox" ItemTemplate="{StaticResource WpStoreInstalledItemTemplate}" SelectionChanged="InstalledListBox_SelectionChanged"/>
+                </Grid>
+            </phone:PivotItem>
+
+        </phone:Pivot>
+    </Grid>
+
+</phone:PhoneApplicationPage>

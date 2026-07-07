@@ -1,0 +1,88 @@
+<phone:PhoneApplicationPage
+    x:Class="MEmarket.SettingsPage"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait"  Orientation="Portrait"
+    mc:Ignorable="d"
+    shell:SystemTray.IsVisible="True">
+
+    <toolkit:TransitionService.NavigationInTransition>
+        <toolkit:NavigationInTransition>
+            <toolkit:NavigationInTransition.Backward>
+                <toolkit:TurnstileTransition Mode="BackwardIn"/>
+            </toolkit:NavigationInTransition.Backward>
+
+            <toolkit:NavigationInTransition.Forward>
+                <toolkit:TurnstileTransition Mode="ForwardIn"/>
+            </toolkit:NavigationInTransition.Forward>
+        </toolkit:NavigationInTransition>
+    </toolkit:TransitionService.NavigationInTransition>
+
+    <toolkit:TransitionService.NavigationOutTransition>
+        <toolkit:NavigationOutTransition>
+            <toolkit:NavigationOutTransition.Backward>
+                <toolkit:TurnstileTransition Mode="BackwardOut"/>
+            </toolkit:NavigationOutTransition.Backward>
+
+            <toolkit:NavigationOutTransition.Forward>
+                <toolkit:TurnstileTransition Mode="ForwardOut"/>
+            </toolkit:NavigationOutTransition.Forward>
+        </toolkit:NavigationOutTransition>
+    </toolkit:TransitionService.NavigationOutTransition>
+
+    <phone:PhoneApplicationPage.ApplicationBar>
+        <shell:ApplicationBar x:Name="SettingsAppBar" IsVisible="False">
+            <shell:ApplicationBar.MenuItems>
+                <shell:ApplicationBarMenuItem IsEnabled="True" Text="загрузки и обновления"/>
+            </shell:ApplicationBar.MenuItems>
+            <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/new.png" IsEnabled="True" Text="добавить" Click="AddRepoButton_Click"/>
+        </shell:ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>
+
+    <Grid x:Name="LayoutRoot" Background="Transparent">
+        <phone:Pivot x:Name="SettingsPivot" Title="НАСТРОЙКИ" SelectionChanged="SettingsPivot_SelectionChanged">
+            <phone:PivotItem Header="основные">
+                <StackPanel Margin="12,0,12,0">
+                    <TextBlock Text="Здесь пока ничего нет ;)" FontSize="24" Opacity="0.5"/>
+                </StackPanel>
+            </phone:PivotItem>
+
+            <phone:PivotItem Header="репозитории">
+                <Grid Margin="12,0,12,0">
+                    <phone:LongListSelector x:Name="RepositoriesList" SelectionChanged="RepositoriesList_SelectionChanged">
+                        <phone:LongListSelector.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,24">
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource PhoneTextExtraLargeStyle}" FontSize="{StaticResource PhoneFontSizeLarge}"/>
+                                    <TextBlock Text="{Binding Url}" Style="{StaticResource PhoneTextSubtleStyle}" TextWrapping="NoWrap" TextTrimming="WordEllipsis"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </phone:LongListSelector.ItemTemplate>
+                    </phone:LongListSelector>
+                </Grid>
+            </phone:PivotItem>
+
+            <phone:PivotItem Header="о программе">
+                <ScrollViewer Margin="12,0,12,0">
+                    <StackPanel>
+                        <Image Source="/Assets/Images/logo-memarket.png" Width="120" Height="120" HorizontalAlignment="Left" Margin="0,0,0,24"/>
+                        <TextBlock Text="MEmarket Silverlight" Style="{StaticResource PhoneTextExtraLargeStyle}" FontSize="36" Margin="0,0,0,12"/>
+                        <TextBlock Text="Версия 0.0.1.0 (Public Beta)" Style="{StaticResource PhoneTextSubtleStyle}" Margin="0,0,0,24"/>
+                        <TextBlock Text="Разработчик: kameton.dev" Style="{StaticResource PhoneTextNormalStyle}" Margin="0,0,0,12"/>
+                        <TextBlock Text="Данный клиент MEmarket находится на этапе разработки. Возможны баги, зависания и ошибки" Foreground="Red" TextWrapping="Wrap" Style="{StaticResource PhoneTextNormalStyle}" Margin="0,0,0,16"/>
+                        <TextBlock Text="© 2026 kameton.dev. Гойда ＼(°O°)／." Style="{StaticResource PhoneTextSubtleStyle}" Margin="0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </phone:PivotItem>
+        </phone:Pivot>
+    </Grid>
+
+</phone:PhoneApplicationPage>

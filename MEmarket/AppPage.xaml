@@ -1,0 +1,98 @@
+<phone:PhoneApplicationPage
+    x:Class="MEmarket.AppPage"
+    xmlns:toolkit="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone.Controls.Toolkit"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait"  Orientation="Portrait"
+    shell:SystemTray.IsVisible="True">
+
+    <toolkit:TransitionService.NavigationInTransition>
+        <toolkit:NavigationInTransition>
+            <toolkit:NavigationInTransition.Backward>
+                <toolkit:TurnstileTransition Mode="BackwardIn"/>
+            </toolkit:NavigationInTransition.Backward>
+            
+            <toolkit:NavigationInTransition.Forward>
+                <toolkit:TurnstileTransition Mode="ForwardIn"/>
+            </toolkit:NavigationInTransition.Forward>
+        </toolkit:NavigationInTransition>
+    </toolkit:TransitionService.NavigationInTransition>
+
+    <toolkit:TransitionService.NavigationOutTransition>
+        <toolkit:NavigationOutTransition>
+            <toolkit:NavigationOutTransition.Backward>
+                <toolkit:TurnstileTransition Mode="BackwardOut"/>
+            </toolkit:NavigationOutTransition.Backward>
+            
+            <toolkit:NavigationOutTransition.Forward>
+                <toolkit:TurnstileTransition Mode="ForwardOut"/>
+            </toolkit:NavigationOutTransition.Forward>
+        </toolkit:NavigationOutTransition>
+    </toolkit:TransitionService.NavigationOutTransition>
+
+    <phone:PhoneApplicationPage.ApplicationBar>
+        <shell:ApplicationBar>
+            <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/save.png" IsEnabled="True" Text="сохранить" Click="SaveToDevice_Click"/>
+            <!--<shell:ApplicationBarIconButton IconUri="/Assets/AppBar/download.png" IsEnabled="True" Text="установить" Click="Install_Click"/> -->
+        </shell:ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>
+
+    <Grid x:Name="LayoutRoot" Background="Transparent">
+        <phone:Pivot x:Name="AppPivot" Title="ПРИЛОЖЕНИЕ">
+            <phone:PivotItem Header="сведения">
+                <Grid>
+                    <ScrollViewer>
+                        <StackPanel Margin="12,0,12,24">
+                            <Image x:Name="AppIcon" Source="/Assets/StoreLogo.png" Width="140" Height="140" Margin="0,0,0,16" HorizontalAlignment="Left" ImageFailed="IconImage_ImageFailed"/>
+
+                            <TextBlock x:Name="SummaryText" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                            <RichTextBox x:Name="DescriptionText" IsReadOnly="True" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="-12,0" Padding="0"/>
+
+                            <ScrollViewer x:Name="ScreenshotsScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,16" Visibility="Collapsed">
+                                <StackPanel x:Name="ScreenshotsPanel" Orientation="Horizontal"/>
+                            </ScrollViewer>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </phone:PivotItem>
+
+            <phone:PivotItem Header="подробности">
+                <Grid>
+                    <ScrollViewer>
+                        <StackPanel Margin="12,0,12,24">
+
+                            <TextBlock x:Name="AppVersionText" Text="Версия: " Margin="0,0,0,16"/>
+
+                            <ComboBox x:Name="VersionComboBox" Visibility="Visible" Margin="0,0,0,16" SelectionChanged="VersionComboBox_SelectionChanged"/>
+
+                            <TextBlock Text="Возможности:" FontSize="20" FontFamily="Segoe WP SemiLight" Margin="0,0,0,8" Opacity="0.7"/>
+                            <StackPanel x:Name="CapabilitiesPanel" Margin="0,0,0,8"/>
+
+                            <TextBlock x:Name="PublisherText" Text="разработчик" Margin="0,0,0,8"/>
+                            
+                            <!-- размер
+                            <TextBlock x:Name="AppSizeText" Text="Размер: " Margin="0,0,0,16"/> -->
+
+                            <!-- хз мб пригодится
+                            <TextBlock Text="Режим установки:" Margin="0,0,0,8" FontSize="22"/>
+                            <RadioButton x:Name="RadioDeployment" Content="Deployment Mode [xap, appx]" GroupName="InstallMode" IsChecked="True"/>
+                            <RadioButton x:Name="RadioNone" Content="None [appx, appxbundle]" GroupName="InstallMode"/>
+                            <RadioButton x:Name="RadioAuto" Content="Авто (рекомендуемое)" GroupName="InstallMode"/>-->
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </phone:PivotItem>
+        </phone:Pivot>
+    </Grid>
+
+</phone:PhoneApplicationPage>

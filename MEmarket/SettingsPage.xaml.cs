@@ -8,15 +8,20 @@ using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using MEmarket.Models;
+using MEmarket.Services;
 using Microsoft.Phone.Controls.Primitives;
 using System.Threading.Tasks;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
+using System.IO.IsolatedStorage;
 
 namespace MEmarket
 {
     public partial class SettingsPage : PhoneApplicationPage
     {
+
+        private const string SettingKey = "ShowUpdatesOnTile";
+
         public SettingsPage()
         {
             InitializeComponent();
@@ -28,6 +33,18 @@ namespace MEmarket
             
             RepositoriesList.ItemsSource = null;
             RepositoriesList.ItemsSource = App.Repositories;
+
+            // Считываем сохраненное значение (по умолчанию false)
+            var settings = IsolatedStorageSettings.ApplicationSettings;
+            bool isEnabled = false;
+            if (settings.Contains(SettingKey))
+            {
+                isEnabled = (bool)settings[SettingKey];
+            }
+
+            // Устанавливаем состояние переключателя
+            LiveTileToggle.IsChecked = isEnabled;
+            UpdateToggleText(isEnabled);
         }
 
         private void ShowAllOsToggle_Checked(object sender, RoutedEventArgs e)
@@ -148,6 +165,36 @@ namespace MEmarket
             };
 
             messageBox.Show();
+        }
+
+        private void LiveTileToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            SaveSetting(true);
+            UpdateToggleText(true);
+        }
+
+        private void LiveTileToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SaveSetting(false);
+            UpdateToggleText(false);
+
+            // При выключении настройки сразу очищаем живую плитку на рабочем столе
+            TileManager.ClearTile();
+        }
+
+        private void SaveSetting(bool value)
+        {
+            var settings = IsolatedStorageSettings.ApplicationSettings;
+            settings[SettingKey] = value;
+            settings.Save();
+        }
+
+        private void UpdateToggleText(bool isEnabled)
+        {
+            if (LiveTileToggle != null)
+            {
+                LiveTileToggle.Content = isEnabled ? "Вкл." : "Выкл.";
+            }
         }
 
         private void SettingsPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)

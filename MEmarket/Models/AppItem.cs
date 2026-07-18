@@ -14,6 +14,7 @@ namespace MEmarket.Models
         public string AppUrl { get; set; }
         public string AppType { get; set; }
         public string LatestVersion { get; set; }
+        public string RepositoryName { get; set; }
         
         public List<AppVersion> Versions { get; set; }
         public List<string> Capabilities { get; set; }

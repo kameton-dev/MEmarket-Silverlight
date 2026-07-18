@@ -53,12 +53,49 @@ namespace MEmarket
             MarkdownRenderer.Render(DescriptionText, _currentApp.Summary ?? "");
             SummaryText.Text = _currentApp.Summary ?? "";
             PublisherText.Text = "";
+            RepositoryText.Text = GetRepositoryName(_currentApp);
             //AppSizeText.Text = "Размер: загрузка...";
             
             if (!string.IsNullOrEmpty(_currentApp.AppUrl))
             {
                 await LoadEntryAsync(_currentApp.AppUrl);
             }
+        }
+
+        private string GetRepositoryName(AppItem app)
+        {
+            if (app == null) return "неизвестно";
+            
+            if (!string.IsNullOrEmpty(app.RepositoryName))
+            {
+                return app.RepositoryName;
+            }
+
+            if (!string.IsNullOrEmpty(app.AppUrl))
+            {
+                try
+                {
+                    var appUri = new Uri(app.AppUrl);
+                    var appHost = appUri.Host.ToLower();
+
+                    foreach (var repo in App.Repositories)
+                    {
+                        if (string.IsNullOrEmpty(repo.Url)) continue;
+                        try
+                        {
+                            var repoUri = new Uri(repo.Url);
+                            if (repoUri.Host.ToLower() == appHost)
+                            {
+                                return repo.Name;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+
+            return "неизвестно";
         }
 
         private async Task LoadEntryAsync(string appUrl)
@@ -103,7 +140,7 @@ namespace MEmarket
                 
                 if (root["creator"] != null)
                 {
-                    PublisherText.Text = "Разработчик: " + root["creator"].ToString();
+                    PublisherText.Text = root["creator"].ToString();
                 }
 
                 //AppSizeText.Text = "Размер: н/д";
@@ -180,7 +217,7 @@ namespace MEmarket
 
                 if (_versions.Count == 1)
                 {
-                    AppVersionText.Text = "Версия: " + _versions[0].Version;
+                    AppVersionText.Text = _versions[0].Version;
                     AppVersionText.Visibility = Visibility.Visible;
                     VersionComboBox.Visibility = Visibility.Collapsed;
                 }
@@ -192,17 +229,13 @@ namespace MEmarket
 
                     foreach (var ver in _versions)
                     {
-                        VersionComboBox.Items.Add(new ComboBoxItem
-                        {
-                            Content = ver.Version,
-                            Tag = ver
-                        });
+                        VersionComboBox.Items.Add(ver.Version);
                     }
                     VersionComboBox.SelectedIndex = 0;
                 }
                 else
                 {
-                    AppVersionText.Text = "Версия: неизвестно";
+                    AppVersionText.Text = "неизвестно";
                     AppVersionText.Visibility = Visibility.Visible;
                     VersionComboBox.Visibility = Visibility.Collapsed;
                 }
@@ -216,7 +249,7 @@ namespace MEmarket
                 MarkdownRenderer.Render(DescriptionText, _currentApp?.Summary ?? "Не удалось загрузить описание.");
                 SummaryText.Text = _currentApp?.Summary ?? "";
                 //AppSizeText.Text = "Размер: н/д";
-                AppVersionText.Text = "Версия: " + (_currentApp?.LatestVersion ?? "неизвестно");
+                AppVersionText.Text =(_currentApp?.LatestVersion ?? "неизвестно");
                 CapabilitiesPanel.Children.Clear();
                 CapabilitiesPanel.Children.Add(new TextBlock { Text = "Не удалось загрузить.", Opacity = 0.6 });
                 SystemTray.SetProgressIndicator(this, null);
@@ -227,10 +260,13 @@ namespace MEmarket
         {
             if (_versions == null || _versions.Count == 0) return null;
 
-            if (VersionComboBox.Visibility == Visibility.Visible && VersionComboBox.SelectedItem != null)
+            if (VersionComboBox.Visibility == Visibility.Visible && VersionComboBox.SelectedIndex >= 0)
             {
-                var item = VersionComboBox.SelectedItem as ComboBoxItem;
-                return item?.Tag as AppVersion;
+                int index = VersionComboBox.SelectedIndex;
+                if (index < _versions.Count)
+                {
+                    return _versions[index];
+                }
             }
 
             return _versions.FirstOrDefault();
@@ -248,7 +284,10 @@ namespace MEmarket
             return baseUrl + version.AppFile;
         }
 
+        // --- ПОПЫТКИ РАЗВЕРТЫВАНИЯ ПРИЛОЖЕНИЙ СРАЗУ ПОСЛЕ СКАЧИВАНИЯ ---
+        // ВНИМАНИЕ: ИСХОДНИКИ ВЗЯТЫ ИЗ ДЕКОМПИЛИРОВАННОЙ LIVESTORE
         //TODO: либо удалить либо перелопатить
+
         /*private async void Install_Click(object sender, EventArgs e)
         {
             var version = GetSelectedVersion();
@@ -259,84 +298,193 @@ namespace MEmarket
                 MessageBox.Show("Ссылка на скачивание недоступна.", "╮ (. ❛ ᴗ ❛.) ╭", MessageBoxButton.OK);
                 return;
             }
+            
+            if (ApplicationBar != null)
+            {
+                foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
+                {
+                    button.IsEnabled = false;
+                }
+            }
 
             var progressIndicator = new ProgressIndicator
             {
                 IsVisible = true,
-                IsIndeterminate = false,
-                Text = "Скачивание..."
+                IsIndeterminate = true,
+                Text = "Downloading " + (_currentApp?.Name ?? "app") + "..."
             };
             SystemTray.SetProgressIndicator(this, progressIndicator);
 
             try
             {
-                string fileName = "temp_install_package.appx";
-
-                var httpClient = new HttpClient();
-                var responseMsg = await httpClient.GetAsync(new Uri(downloadUrl));
-                responseMsg.EnsureSuccessStatusCode();
-
-                StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-                StorageFile tempFile = await localFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
-
-                using (var inputStream = await responseMsg.Content.ReadAsStreamAsync())
-                using (var outputStream = await tempFile.OpenStreamForWriteAsync())
+                StorageFile downloadedFile = null;
+                try
                 {
-                    await inputStream.CopyToAsync(outputStream);
+                    StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+
+                    Uri uri = new Uri(downloadUrl);
+                    string fileExt = Path.GetExtension(uri.AbsolutePath).ToLower();
+                    if (string.IsNullOrEmpty(fileExt)) fileExt = ".xap";
+                    
+                    string fileName = "temp_install_package" + fileExt;
+                    downloadedFile = await localFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
+
+                    using (HttpClient httpClient = new HttpClient())
+                    {
+                        byte[] fileBytes = await httpClient.GetByteArrayAsync(uri);
+                        await FileIO.WriteBytesAsync(downloadedFile, fileBytes);
+                    }
                 }
-                
-                string physicalPath = tempFile.Path;
-
-                progressIndicator.Text = "Подключение к CMD Injector...";
-                progressIndicator.IsIndeterminate = true;
-                
-                var cts = new CancellationTokenSource();
-                var tClient = new TelnetClient(TimeSpan.FromSeconds(1), cts.Token);
-                tClient.Connect();
-
-                long i = 0;
-                while (tClient.IsConnected == false && i < 150)
+                catch (Exception ex)
                 {
-                    await Task.Delay(100);
-                    i++;
+                    MessageBox.Show("Error saving file: " + ex.Message, "MEmarket", MessageBoxButton.OK);
                 }
 
-                if (!tClient.IsConnected)
+                if (downloadedFile != null)
                 {
                     progressIndicator.IsVisible = false;
                     SystemTray.SetProgressIndicator(this, null);
-                    MessageBox.Show("Не удалось подключиться к CMD Injector. Проверьте, активна ли инъекция на телефоне.", "Ошибка", MessageBoxButton.OK);
-                    return;
+                    
+                    await InstallPackageAsync(downloadedFile);
                 }
-
-                progressIndicator.Text = "Установка приложения...";
-                
-                string command = string.Format("TH.exe \"{0}\" -di", physicalPath);
-                
-                await Task.Run(() =>
+                else
                 {
-                    tClient.Send(command);
+                    progressIndicator.IsVisible = false;
+                    SystemTray.SetProgressIndicator(this, null);
+                    MessageBox.Show("Download failed.", "MEmarket", MessageBoxButton.OK);
+
+                    if (ApplicationBar != null)
+                    {
+                        foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
+                        {
+                            button.IsEnabled = true;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error downloading file: " + ex.Message, "MEmarket", MessageBoxButton.OK);
+                progressIndicator.IsVisible = false;
+                SystemTray.SetProgressIndicator(this, null);
+
+                if (ApplicationBar != null)
+                {
+                    foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
+                    {
+                        button.IsEnabled = true;
+                    }
+                }
+            }
+        }
+
+        private async Task InstallPackageAsync(StorageFile packageFile)
+        {
+            string fileName = Path.GetFileNameWithoutExtension(packageFile.Name);
+
+            var progressIndicator = new ProgressIndicator
+            {
+                IsVisible = true,
+                IsIndeterminate = true,
+                Text = "Deploying " + fileName + ".."
+            };
+            SystemTray.SetProgressIndicator(this, progressIndicator);
+
+            try
+            {
+                var installer = new MEinstaller();
+                
+                installer.output = new Action<string>((message) =>
+                {
+                    System.Diagnostics.Debug.WriteLine("[MEinstaller Log] " + message);
+
+                    this.Dispatcher.BeginInvoke(() =>
+                    {
+                        if (message.Contains("Connecting"))
+                            progressIndicator.Text = "Connecting to telnet...";
+                        else if (message.Contains("Executing"))
+                            progressIndicator.Text = "Deploying " + fileName + "..";
+                        else if (message.Contains("Cleaning"))
+                            progressIndicator.Text = "Cleaning temp files...";
+                    });
+                });
+
+                installer.progress = new Action<bool>((isInstalling) =>
+                {
+                    this.Dispatcher.BeginInvoke(() =>
+                    {
+                        progressIndicator.IsIndeterminate = isInstalling;
+                    });
                 });
                 
-                await Task.Delay(6000);
+                bool state = await installer.InstallApp(packageFile, InstallInSDCard: false);
                 
                 try
                 {
-                    await tempFile.DeleteAsync();
+                    await packageFile.DeleteAsync();
                 }
                 catch { }
 
                 progressIndicator.IsVisible = false;
                 SystemTray.SetProgressIndicator(this, null);
-                MessageBox.Show("Установка успешно завершена! Приложение появится в списке меню.", "(o^ ^o)", MessageBoxButton.OK);
+
+                if (state)
+                {
+                    try
+                    {
+                        var version = GetSelectedVersion();
+                        string versionToSave = version != null ? version.Version : (_currentApp.LatestVersion ?? "1.0.0.0");
+                        string repoUrl = "";
+                        if (!string.IsNullOrEmpty(_currentApp.AppUrl))
+                        {
+                            var appUri = new Uri(_currentApp.AppUrl);
+                            repoUrl = appUri.Scheme + "://" + appUri.Host;
+                            if (appUri.Port != 80 && appUri.Port != 443)
+                            {
+                                repoUrl += ":" + appUri.Port;
+                            }
+                        }
+
+                        LocalAppsManager.RegisterInstalledApp(
+                            _currentApp.Id,
+                            _currentApp.Name,
+                            _currentApp.Icon,
+                            versionToSave,
+                            repoUrl,
+                            _currentApp.AppUrl
+                        );
+                    }
+                    catch (Exception dbEx)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Ошибка записи в журнал: " + dbEx.Message);
+                    }
+
+                    MessageBox.Show(fileName + " has been installed!", "MEmarket", MessageBoxButton.OK);
+                }
+                else
+                {
+                    MessageBox.Show("Installation failed. Check CMD Injector status.", "MEmarket", MessageBoxButton.OK);
+                }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine("Error in InstallPackageAsync: " + ex.Message);
                 progressIndicator.IsVisible = false;
                 SystemTray.SetProgressIndicator(this, null);
-                MessageBox.Show("Ошибка установки: " + ex.Message, "〣( ºΔº )〣", MessageBoxButton.OK);
             }
-        }*/
+            finally
+            {
+                if (ApplicationBar != null)
+                {
+                    foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
+                    {
+                        button.IsEnabled = true;
+                    }
+                }
+            }
+        } */
+
+        // ---
 
         private void SaveToDevice_Click(object sender, EventArgs e)
         {

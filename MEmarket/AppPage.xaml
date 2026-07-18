@@ -19,7 +19,7 @@
             <toolkit:NavigationInTransition.Backward>
                 <toolkit:TurnstileTransition Mode="BackwardIn"/>
             </toolkit:NavigationInTransition.Backward>
-            
+
             <toolkit:NavigationInTransition.Forward>
                 <toolkit:TurnstileTransition Mode="ForwardIn"/>
             </toolkit:NavigationInTransition.Forward>
@@ -31,7 +31,7 @@
             <toolkit:NavigationOutTransition.Backward>
                 <toolkit:TurnstileTransition Mode="BackwardOut"/>
             </toolkit:NavigationOutTransition.Backward>
-            
+
             <toolkit:NavigationOutTransition.Forward>
                 <toolkit:TurnstileTransition Mode="ForwardOut"/>
             </toolkit:NavigationOutTransition.Forward>
@@ -41,17 +41,17 @@
     <phone:PhoneApplicationPage.ApplicationBar>
         <shell:ApplicationBar>
             <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/save.png" IsEnabled="True" Text="сохранить" Click="SaveToDevice_Click"/>
-            <!--<shell:ApplicationBarIconButton IconUri="/Assets/AppBar/download.png" IsEnabled="True" Text="установить" Click="Install_Click"/> -->
+            <!-- <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/download.png" IsEnabled="True" Text="установить" Click="Install_Click"/> -->
         </shell:ApplicationBar>
     </phone:PhoneApplicationPage.ApplicationBar>
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
         <phone:Pivot x:Name="AppPivot" Title="ПРИЛОЖЕНИЕ">
-            <phone:PivotItem Header="сведения">
+            <phone:PivotItem Header="обзор">
                 <Grid>
                     <ScrollViewer>
                         <StackPanel Margin="12,0,12,24">
-                            <Image x:Name="AppIcon" Source="/Assets/StoreLogo.png" Width="140" Height="140" Margin="0,0,0,16" HorizontalAlignment="Left" ImageFailed="IconImage_ImageFailed"/>
+                            <Image x:Name="AppIcon" Source="/Assets/StoreLogo.png" Width="180" Height="180" Margin="0,0,0,16" HorizontalAlignment="Left" ImageFailed="IconImage_ImageFailed"/>
 
                             <TextBlock x:Name="SummaryText" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" />
 
@@ -61,25 +61,41 @@
                                 <StackPanel x:Name="ScreenshotsPanel" Orientation="Horizontal"/>
                             </ScrollViewer>
 
+                            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,10,0,0" Width="432" FontFamily="Portable User Interface">
+                            
+                            </TextBlock>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </phone:PivotItem>
 
-            <phone:PivotItem Header="подробности">
+            <phone:PivotItem Header="детали">
                 <Grid>
                     <ScrollViewer>
                         <StackPanel Margin="12,0,12,24">
+                            <TextBlock Text="Информация" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP SemiLight" FontSize="32"/>
+                            <StackPanel Margin="12,0" Orientation="Horizontal">
+                                <TextBlock Text="Версия: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock x:Name="AppVersionText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
+                            </StackPanel>
+                            <toolkit:ListPicker x:Name="VersionComboBox" Header="" Visibility="Visible" Margin="0" SelectionChanged="VersionComboBox_SelectionChanged"/>
 
-                            <TextBlock x:Name="AppVersionText" Text="Версия: " Margin="0,0,0,16"/>
+                            <StackPanel Margin="12,0">
+                                <TextBlock Text="Возможости: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <StackPanel x:Name="CapabilitiesPanel" Margin="0"/>
+                            </StackPanel>
 
-                            <ComboBox x:Name="VersionComboBox" Visibility="Visible" Margin="0,0,0,16" SelectionChanged="VersionComboBox_SelectionChanged"/>
+                            <StackPanel Orientation="Horizontal" Margin="12,0">
+                                <TextBlock Text="Разработчик: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock x:Name="PublisherText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
+                            </StackPanel>
 
-                            <TextBlock Text="Возможности:" FontSize="20" FontFamily="Segoe WP SemiLight" Margin="0,0,0,8" Opacity="0.7"/>
-                            <StackPanel x:Name="CapabilitiesPanel" Margin="0,0,0,8"/>
+                            <StackPanel Orientation="Horizontal" Margin="12,0">
+                                <TextBlock Text="Репозиторий: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock x:Name="RepositoryText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
+                            </StackPanel>
 
-                            <TextBlock x:Name="PublisherText" Text="разработчик" Margin="0,0,0,8"/>
-                            
                             <!-- размер
                             <TextBlock x:Name="AppSizeText" Text="Размер: " Margin="0,0,0,16"/> -->
 

@@ -157,7 +157,8 @@ namespace MEmarket.ViewModels
                                     AppType = appType,
                                     AppUrl = (packageObj["app_url"]?.ToString() ?? "").Trim(),
                                     Category = (packageObj["category"]?.ToString() ?? "").Trim(),
-                                    LatestVersion = packageObj["latest_version"]?.ToString() ?? string.Empty
+                                    LatestVersion = packageObj["latest_version"]?.ToString() ?? string.Empty,
+                                    RepositoryName = repo.Name
                                 };
 
                                 string iconUrl = (packageObj["icon"]?.ToString() ?? "").Trim();

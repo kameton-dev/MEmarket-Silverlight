@@ -122,16 +122,18 @@
     <Compile Include="SearchPage.xaml.cs">
       <DependentUpon>SearchPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Services\LiveTileManager.cs" />
     <Compile Include="Services\LocalAppsManager.cs" />
     <Compile Include="Services\MarkdownRenderer.cs" />
     <Compile Include="Services\MEinstaller.cs" />
+    <Compile Include="Services\TelnetClient.cs" />
+    <Compile Include="Services\TileManager.cs" />
     <Compile Include="Services\UpdateChecker.cs" />
     <Compile Include="SettingsPage.xaml.cs">
       <DependentUpon>SettingsPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\ItemViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
-    <Compile Include="ViewModels\RepositoriesViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -187,12 +189,6 @@
   <ItemGroup>
     <Content Include="Assets\AppBar\save.png" />
     <Content Include="Assets\Images\logo-memarket.png" />
-    <Content Include="ndtklib.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="OEMSharedFolderAccessLib.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Toolkit.Content\ApplicationBar.Add.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Cancel.png" />
     <Content Include="Toolkit.Content\ApplicationBar.Check.png" />

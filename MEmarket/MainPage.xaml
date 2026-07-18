@@ -7,6 +7,7 @@
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    toolkit:TiltEffect.IsTiltEnabled="True" 
     mc:Ignorable="d"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
@@ -39,7 +40,7 @@
     </toolkit:TransitionService.NavigationOutTransition>
 
     <phone:PhoneApplicationPage.ApplicationBar>
-        <shell:ApplicationBar>
+        <shell:ApplicationBar Opacity="0.8">
             <shell:ApplicationBar.MenuItems>
                 <shell:ApplicationBarMenuItem IsEnabled="True" Text="обновить" Click="Refresh_Click"/>
                 <shell:ApplicationBarMenuItem IsEnabled="True" Text="загрузки и обновления" Click="InstalledApps_Click"/>
@@ -89,24 +90,24 @@
                 </phone:LongListSelector>
             </phone:PanoramaItem>
 
-            <phone:PanoramaItem Header="рекомендации">
-                <ListBox ItemsSource="{Binding Featured}" SelectionChanged="FeaturedList_SelectionChanged">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <toolkit:WrapPanel ItemWidth="140" ItemHeight="140" Margin="12,0,0,0"/>
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
+            <phone:PanoramaItem Orientation="Horizontal">
+                <phone:LongListSelector 
+                    Margin="10,0,-22,0" 
+                    LayoutMode="Grid" 
+                    ItemsSource="{Binding Featured}" 
+                    SelectionChanged="FeaturedList_SelectionChanged">
+                    <phone:LongListSelector.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,0,16,16" Width="124" Height="124" Background="{StaticResource PhoneAccentBrush}">
-                                <Image Source="{Binding Icon}" Stretch="UniformToFill" ImageFailed="IconImage_ImageFailed"/>
-                                <Grid VerticalAlignment="Bottom" Background="#99000000">
-                                    <TextBlock Text="{Binding Name}" Margin="6,2,6,4" FontSize="15" Foreground="White" TextAlignment="Center" TextWrapping="NoWrap" TextTrimming="WordEllipsis"/>
-                                </Grid>
+                            <Grid Margin="0,0,9.5,9.5" Background="{StaticResource PhoneAccentBrush}">
+                                <Image Source="{Binding Icon}" Stretch="UniformToFill" ImageFailed="IconImage_ImageFailed" Height="Auto" Width="Auto"/>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Bottom" Margin="5,0,0,5" FontSize="18" FontFamily="Segoe WP" Foreground="White"/>
                             </Grid>
                         </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </phone:LongListSelector.ItemTemplate>
+                    <phone:LongListSelector.GridCellSize>
+                        <Size>180,180</Size>
+                    </phone:LongListSelector.GridCellSize>
+                </phone:LongListSelector>
             </phone:PanoramaItem>
             
         </phone:Panorama>

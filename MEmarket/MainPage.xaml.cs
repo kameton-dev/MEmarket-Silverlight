@@ -59,14 +59,14 @@ namespace MEmarket
 
         private void FeaturedList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var listbox = sender as ListBox;
-            if (listbox == null) return;
+            var selector = sender as LongListSelector;
+            if (selector == null) return;
 
-            var app = listbox.SelectedItem as AppItem;
+            var app = selector.SelectedItem as AppItem;
             if (app == null) return;
 
             App.SelectedApp = app;
-            listbox.SelectedItem = null;
+            selector.SelectedItem = null;
 
             NavigationService.Navigate(new Uri("/AppPage.xaml", UriKind.Relative));
         }

@@ -73,13 +73,14 @@ namespace MEmarket
             try
             {
                 var localApps = await Task.Run(() => LocalAppsManager.LoadApps());
-                
                 var updates = await UpdateChecker.CheckForUpdatesAsync(localApps);
 
                 foreach (var update in updates)
                 {
                     AvailableUpdates.Add(update);
                 }
+
+                TileManager.UpdateLiveTile(updates);
 
                 if (AvailableUpdates.Count == 0)
                 {
@@ -125,22 +126,19 @@ namespace MEmarket
 
             try
             {
-                // 1. Стучимся в entry.json приложения
                 string entryUrl = app.AppUrl.TrimEnd('/') + "/entry.json";
                 HttpClient client = new HttpClient();
                 string entryJsonText = await client.GetStringAsync(new Uri(entryUrl));
 
                 string appFileName = null;
-
-                // 2. Парсим манифест через нативный Windows.Data.Json
+                
                 JsonObject entryRoot;
                 if (JsonObject.TryParse(entryJsonText, out entryRoot))
                 {
                     if (entryRoot.ContainsKey("versions"))
                     {
                         JsonArray versions = entryRoot.GetNamedArray("versions");
-
-                        // Используем стандартный foreach вместо GetAt
+                        
                         foreach (var v in versions)
                         {
                             var versionObj = v.GetObject();
@@ -153,30 +151,25 @@ namespace MEmarket
                             }
                         }
                     }
-
-                    // 3. Если файл найден — сохраняем в БД и вызываем FileSavePicker
+                    
                     if (!string.IsNullOrEmpty(appFileName))
                     {
                         string downloadUrl = app.AppUrl.TrimEnd('/') + "/" + appFileName;
-
-                        // Обновление installed_apps.json посел обновления
+                        
                         try
                         {
-                            // Собираем чистый адрес репозитория из AppUrl
                             string repoUrl = "";
                             if (!string.IsNullOrEmpty(app.AppUrl))
                             {
                                 var appUri = new Uri(app.AppUrl);
                                 repoUrl = appUri.Scheme + "://" + appUri.Host;
-
-                                // Если порт нестандартный (например, http://localhost:8080, что маловероятно), добавляем его
+                                
                                 if (appUri.Port != 80 && appUri.Port != 443)
                                 {
                                     repoUrl += ":" + appUri.Port;
                                 }
                             }
-
-                            // Регистрируем в json файле уже с НОВОЙ версией (app.NewVersion)
+                            
                             LocalAppsManager.RegisterInstalledApp(
                                 app.Id,
                                 app.Name,
@@ -194,8 +187,7 @@ namespace MEmarket
                         }
                         
                         SetLoading(false);
-
-                        // ИНИЦИАЛИЗАЦИЯ FILE_SAVE_PICKER (Аналогично AppPage)
+                        
                         var savePicker = new FileSavePicker();
                         savePicker.SuggestedStartLocation = PickerLocationId.Downloads;
 

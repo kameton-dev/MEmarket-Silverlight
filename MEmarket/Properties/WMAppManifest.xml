@@ -1,7 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Deployment xmlns="http://schemas.microsoft.com/windowsphone/2014/deployment" AppPlatformVersion="8.1">
-  <DefaultLanguage xmlns="" code="ru" />
-  <App xmlns="" ProductID="{f3d821cb-4597-4627-ac44-060db92974c1}" Title="MEmarket Silverlight" RuntimeType="Silverlight" Version="0.0.1.1" Genre="apps.normal" Author="kameton.dev" Description="Альтернативный магазин приложений для Windows Phone 8.1" SDOptOut="false" BackUpOptOut="false" Publisher="MEmarket" PublisherID="{f5240837-db18-4380-87ef-af3ef3aa2f2f}">
+  <DefaultLanguage xmlns="" code="en-US" />
+  <Languages xmlns="">
+    <Language code="en-US" />
+    <Language code="ru-RU" />
+  </Languages>
+  <App xmlns="" ProductID="{f3d821cb-4597-4627-ac44-060db92974c1}" Title="MEmarket Silverlight" RuntimeType="Silverlight" Version="0.0.2.0" Genre="apps.normal" Author="kameton.dev" Description="Альтернативный магазин приложений для Windows Phone 8.1" SDOptOut="false" BackUpOptOut="false" Publisher="MEmarket" PublisherID="{f5240837-db18-4380-87ef-af3ef3aa2f2f}">
     <IconPath IsRelative="true" IsResource="false">Assets\ApplicationIcon.png</IconPath>
     <Capabilities>
       <Capability Name="ID_CAP_NETWORKING" />

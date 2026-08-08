@@ -41,28 +41,33 @@
 
     <phone:PhoneApplicationPage.ApplicationBar>
         <shell:ApplicationBar x:Name="SettingsAppBar" IsVisible="False">
-            <shell:ApplicationBar.MenuItems>
-                <shell:ApplicationBarMenuItem IsEnabled="True" Text="загрузки и обновления"/>
-            </shell:ApplicationBar.MenuItems>
-            <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/new.png" IsEnabled="True" Text="добавить" Click="AddRepoButton_Click"/>
+            <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/new.png" IsEnabled="True" Text="add" Click="AddRepoButton_Click"/>
         </shell:ApplicationBar>
     </phone:PhoneApplicationPage.ApplicationBar>
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <phone:Pivot x:Name="SettingsPivot" Title="НАСТРОЙКИ" SelectionChanged="SettingsPivot_SelectionChanged">
-            <phone:PivotItem Header="основные">
+        <phone:Pivot x:Name="SettingsPivot" Title="{Binding LocalizedResources.SettingsHeader, Source={StaticResource LocalizedStrings}}" SelectionChanged="SettingsPivot_SelectionChanged">
+            <phone:PivotItem Header="{Binding LocalizedResources.MainPivot, Source={StaticResource LocalizedStrings}}">
                 <StackPanel Margin="12,0,12,0">
                     <toolkit:ToggleSwitch x:Name="LiveTileToggle" 
-                      Header="Обновления в живой плитке" 
+                      Header="{Binding LocalizedResources.LiveTileUpds, Source={StaticResource LocalizedStrings}}" 
                       Content="Выкл."
                       Margin="0,8,0,0"
                       Checked="LiveTileToggle_Checked" 
                       Unchecked="LiveTileToggle_Unchecked"/>
-                    <TextBlock Text="При проверке обновлений показывает в живой плитке рандомное приложение и его актуальную версию" TextWrapping="Wrap" FontSize="16" Margin="12,0"/>
+                    <TextBlock Text="{Binding LocalizedResources.LiveTileUpdsDesc, Source={StaticResource LocalizedStrings}}" TextWrapping="Wrap" FontSize="18" Margin="12,0,12,16"/>
+
+                    <toolkit:ToggleSwitch x:Name="AppsFilterToggle" 
+                      Header="{Binding LocalizedResources.AppsFilterToogleHeader, Source={StaticResource LocalizedStrings}}" 
+                      Content="Выкл."
+                      Margin="0,8,0,0"
+                      Checked="AppsFilterToggle_Checked" 
+                      Unchecked="AppsFilterToggle_Unchecked"/>
+                    <TextBlock Text="{Binding LocalizedResources.AppsFilterDesc, Source={StaticResource LocalizedStrings}}" TextWrapping="Wrap" FontSize="18" Margin="12,0"/>
                 </StackPanel>
             </phone:PivotItem>
 
-            <phone:PivotItem Header="репозитории">
+            <phone:PivotItem Header="{Binding LocalizedResources.ReposPivot, Source={StaticResource LocalizedStrings}}">
                 <Grid Margin="12,0,12,0">
                     <phone:LongListSelector x:Name="RepositoriesList" SelectionChanged="RepositoriesList_SelectionChanged">
                         <phone:LongListSelector.ItemTemplate>
@@ -77,15 +82,18 @@
                 </Grid>
             </phone:PivotItem>
 
-            <phone:PivotItem Header="о программе">
+            <phone:PivotItem Header="{Binding LocalizedResources.AboutPivot, Source={StaticResource LocalizedStrings}}">
                 <ScrollViewer Margin="12,0,12,0">
                     <StackPanel>
                         <Image Source="/Assets/Images/logo-memarket.png" Width="180" Height="180" HorizontalAlignment="Left" Margin="0,0,0,16"/>
                         <TextBlock Text="MEmarket Silverlight" Style="{StaticResource PhoneTextExtraLargeStyle}" FontSize="36" Margin="0,0,0,8"/>
-                        <TextBlock Text="Версия 0.0.1.1 (Public Beta)" Style="{StaticResource PhoneTextSubtleStyle}" Margin="0,0,0,8"/>
-                        <TextBlock Text="Разработчик: kameton.dev" Style="{StaticResource PhoneTextNormalStyle}" Margin="0,0,0,16"/>
-                        <TextBlock Text="Данный клиент MEmarket находится на этапе разработки. Возможны баги, зависания и ошибки" Foreground="Red" TextWrapping="Wrap" Style="{StaticResource PhoneTextNormalStyle}" Margin="0,0,0,24"/>
-                        <TextBlock Text="© 2026 kameton.dev. Гойда ＼(°O°)／." Style="{StaticResource PhoneTextSubtleStyle}" Margin="0"/>
+                        <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
+                            <TextBlock Text="{Binding LocalizedResources.AboutVersionText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" Margin="0"/>
+                            <TextBlock x:Name="AppVersionTextBlock" Text="0.0.0.0" Style="{StaticResource PhoneTextSubtleStyle}" Margin="0"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding LocalizedResources.MEmarketDev, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextNormalStyle}" Margin="0,0,0,16"/>
+                        <TextBlock Text="{Binding LocalizedResources.WarningText, Source={StaticResource LocalizedStrings}}" Foreground="Red" TextWrapping="Wrap" Style="{StaticResource PhoneTextNormalStyle}" Margin="0,0,0,24"/>
+                        <TextBlock Text="© 2026 kameton.dev. Nya ＼(°O°)／." Style="{StaticResource PhoneTextSubtleStyle}" Margin="0"/>
                     </StackPanel>
                 </ScrollViewer>
             </phone:PivotItem>

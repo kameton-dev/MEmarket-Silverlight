@@ -85,19 +85,19 @@
     </phone:PhoneApplicationPage.Resources>
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <phone:Pivot Title="ЗАГРУЗКИ И ОБНОВЛЕНИЯ">
-            <phone:PivotItem Header="обновления">
+        <phone:Pivot Title="{Binding LocalizedResources.InstalledAppsPivotHeader, Source={StaticResource LocalizedStrings}}">
+            <phone:PivotItem Header="{Binding LocalizedResources.UpdPivotHeader, Source={StaticResource LocalizedStrings}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Button x:Name="CheckUpdatesButton" Content="проверить наличие обновлений" Margin="0" Click="CheckUpdatesButton_Click" HorizontalAlignment="Left"/>
+                    <Button x:Name="CheckUpdatesButton" Content="{Binding LocalizedResources.CheckUpdButton, Source={StaticResource LocalizedStrings}}" Margin="0" Click="CheckUpdatesButton_Click" HorizontalAlignment="Left"/>
                     <ListBox x:Name="UpdatesListBox" Grid.Row="1" ItemTemplate="{StaticResource WpStoreAppItemTemplate}" SelectionChanged="UpdatesListBox_SelectionChanged"/>
                 </Grid>
             </phone:PivotItem>
 
-            <phone:PivotItem Header="журнал">
+            <phone:PivotItem Header="{Binding LocalizedResources.InstalledPivotHeader, Source={StaticResource LocalizedStrings}}">
                 <Grid Margin="0,12,0,0">
                     <ListBox x:Name="InstalledListBox" ItemTemplate="{StaticResource WpStoreInstalledItemTemplate}" SelectionChanged="InstalledListBox_SelectionChanged"/>
                 </Grid>

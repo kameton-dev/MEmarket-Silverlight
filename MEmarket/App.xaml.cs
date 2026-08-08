@@ -28,6 +28,7 @@ namespace MEmarket
         public static CategoryGroup SelectedCategory { get; set; }
         public static Repository SelectedRepository { get; set; }
         public static bool ShowAllOs { get; set; }
+        public static bool ShowAppTypeFilter { get; set; }
 
         private static MainViewModel viewModel = null;
 
@@ -294,6 +295,15 @@ namespace MEmarket
                 ShowAllOs = false;
             }
 
+            if (settings.Contains("ShowAppTypeFilter"))
+            {
+                ShowAppTypeFilter = (bool)settings["ShowAppTypeFilter"];
+            }
+            else
+            {
+                ShowAppTypeFilter = true;
+            }
+
             if (settings.Contains("Repositories"))
             {
                 var json = settings["Repositories"] as string;
@@ -307,7 +317,7 @@ namespace MEmarket
             {
                 Repositories = new List<Repository>
                 {
-                    new Repository { Url = "http://millenniummarket.ru/index.json", Name = "MEmarket Basic" }
+                    new Repository { Url = "http://millenniummarket.ru/index.json", Name = "MEmarket-Basic" }
                 };
             }
         }
@@ -316,6 +326,7 @@ namespace MEmarket
         {
             var settings = IsolatedStorageSettings.ApplicationSettings;
             settings["ShowAllOs"] = ShowAllOs;
+            settings["ShowAppTypeFilter"] = ShowAppTypeFilter;
             settings.Save();
         }
 
@@ -411,11 +422,11 @@ namespace MEmarket
                     }
                 }
 
-                MessageBox.Show($"Приложение {appName} успешно сохранено на устройство.", "Готово", MessageBoxButton.OK);
+                //MessageBox.Show($"Приложение {appName} успешно сохранено на устройство.", "Готово", MessageBoxButton.OK);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка скачивания: {ex.Message}", "Ошибка", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.DownloadingPkgError + ex.Message, "(´∩｀。)", MessageBoxButton.OK);
             }
             finally
             {

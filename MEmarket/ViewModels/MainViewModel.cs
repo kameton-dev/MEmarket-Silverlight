@@ -144,7 +144,7 @@ namespace MEmarket.ViewModels
                             {
                                 string appType = (packageObj["app_type"]?.ToString() ?? "").Trim().ToLower();
                                 
-                                if (appType != "silverlight" && appType != "winrt")
+                                if (App.ShowAppTypeFilter && appType != "silverlight" && appType != "winrt")
                                 {
                                     continue;
                                 }
@@ -153,7 +153,7 @@ namespace MEmarket.ViewModels
                                 {
                                     Id = key,
                                     Name = packageObj["title"]?.ToString() ?? string.Empty,
-                                    Summary = packageObj["summary"]?.ToString() ?? string.Empty,
+                                    Summary = GetLocalizedText(packageObj["summary"]),
                                     AppType = appType,
                                     AppUrl = (packageObj["app_url"]?.ToString() ?? "").Trim(),
                                     Category = (packageObj["category"]?.ToString() ?? "").Trim(),
@@ -182,24 +182,72 @@ namespace MEmarket.ViewModels
             return list;
         }
 
+        private string GetLocalizedText(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                return string.Empty;
+            }
+
+            if (token.Type == JTokenType.String)
+            {
+                return token.ToString();
+            }
+
+            var obj = token as JObject;
+            if (obj == null)
+            {
+                return token.ToString();
+            }
+
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            var currentLanguage = culture?.Name ?? string.Empty;
+            var baseLanguage = culture?.TwoLetterISOLanguageName ?? string.Empty;
+
+            var preferredLanguages = new List<string>();
+            if (!string.IsNullOrWhiteSpace(currentLanguage)) preferredLanguages.Add(currentLanguage);
+            if (!string.IsNullOrWhiteSpace(baseLanguage)) preferredLanguages.Add(baseLanguage);
+            preferredLanguages.Add("en");
+            preferredLanguages.Add("ru");
+
+            foreach (var language in preferredLanguages.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var property = obj.Property(language);
+                if (property != null && property.Value != null)
+                {
+                    return property.Value.ToString();
+                }
+            }
+
+            foreach (var property in obj.Properties())
+            {
+                if (property.Value != null)
+                {
+                    return property.Value.ToString();
+                }
+            }
+
+            return string.Empty;
+        }
+
         private List<CategoryGroup> CreateCategoryGroups(List<AppItem> allApps)
         {
             var groups = new List<CategoryGroup>();
             var categories = new[]
             {
-                new { Key = "games", Title = "игры" },
-                new { Key = "store", Title = "др. магазины приложений" },
-                new { Key = "entertainment", Title = "развлечения" },
-                new { Key = "music+video", Title = "музыка + видео" },
-                new { Key = "tools", Title = "инструменты" },
-                new { Key = "livestyle", Title = "лайвстайл" },
-                new { Key = "news+weather", Title = "новости + погода" },
-                new { Key = "health+fitness", Title = "здоровье + фитнес" },
-                new { Key = "photo", Title = "фото" },
-                new { Key = "social", Title = "социальные" },
-                new { Key = "sports", Title = "спорт" },
-                new { Key = "business", Title = "бизнес" },
-                new { Key = "education", Title = "обучение" }
+                new { Key = "games", Title = MEmarket.Resources.AppResources.CategoryGames },
+                new { Key = "store", Title = MEmarket.Resources.AppResources.CategoryStore },
+                new { Key = "entertainment", Title = MEmarket.Resources.AppResources.CategoryEntertainment },
+                new { Key = "music+video", Title = MEmarket.Resources.AppResources.CategoryMusicVideo },
+                new { Key = "tools", Title = MEmarket.Resources.AppResources.CategoryTools },
+                new { Key = "livestyle", Title = MEmarket.Resources.AppResources.CategoryLifestyle },
+                new { Key = "news+weather", Title = MEmarket.Resources.AppResources.CategoryNewsWeather },
+                new { Key = "health+fitness", Title = MEmarket.Resources.AppResources.CategoryHealthFitness },
+                new { Key = "photo", Title = MEmarket.Resources.AppResources.CategoryPhoto },
+                new { Key = "social", Title = MEmarket.Resources.AppResources.CategorySocial },
+                new { Key = "sports", Title = MEmarket.Resources.AppResources.CategorySports },
+                new { Key = "business", Title = MEmarket.Resources.AppResources.CategoryBusiness },
+                new { Key = "education", Title = MEmarket.Resources.AppResources.CategoryEducation }
             };
 
             foreach (var cat in categories)
@@ -215,7 +263,7 @@ namespace MEmarket.ViewModels
             var otherItems = allApps.Where(app => !knownKeys.Any(k => string.Equals(app.Category, k, StringComparison.OrdinalIgnoreCase))).ToList();
             if (otherItems.Count > 0)
             {
-                groups.Add(new CategoryGroup { Title = "прочее", Items = otherItems });
+                groups.Add(new CategoryGroup { Title = MEmarket.Resources.AppResources.CategoryOther, Items = otherItems });
             }
 
             return groups;

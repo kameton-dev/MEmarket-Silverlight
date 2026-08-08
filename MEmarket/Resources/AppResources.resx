@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -117,10 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ResourceFlowDirection" xml:space="preserve">
-    <value>LeftToRight</value>
-    <comment>Controls the FlowDirection for all elements in the RootFrame. Set to the traditional direction of this resource file's language</comment>
-  </data>
   <data name="ResourceLanguage" xml:space="preserve">
     <value>en-US</value>
     <comment>Controls the Language and ensures that the font for all elements in the RootFrame aligns with the app's language. Set to the language code of this resource file's language.</comment>
@@ -128,7 +124,221 @@
   <data name="ApplicationTitle" xml:space="preserve">
     <value>my application</value>
   </data>
-  <data name="SampleProperty" xml:space="preserve">
-    <value>Sample Runtime Property Value</value>
+  <data name="AppListHeader" xml:space="preserve">
+    <value>app list</value>
+  </data>
+  <data name="CapsText" xml:space="preserve">
+    <value>Capabilities:</value>
+  </data>
+  <data name="CategoriesHeader" xml:space="preserve">
+    <value>categories</value>
+  </data>
+  <data name="CheckUpdButton" xml:space="preserve">
+    <value>check for updates</value>
+  </data>
+  <data name="CreatorText" xml:space="preserve">
+    <value>Creator:</value>
+  </data>
+  <data name="DetailsPivotHeader" xml:space="preserve">
+    <value>details</value>
+  </data>
+  <data name="DevText" xml:space="preserve">
+    <value>Developer: </value>
+  </data>
+  <data name="InfoTextBlock" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="InstalledAppsPivotHeader" xml:space="preserve">
+    <value>DOWNLOADS &amp; UPDATES</value>
+  </data>
+  <data name="InstalledPivotHeader" xml:space="preserve">
+    <value>installed</value>
+  </data>
+  <data name="LastUpdText" xml:space="preserve">
+    <value>Last updated:</value>
+  </data>
+  <data name="NoResultsText" xml:space="preserve">
+    <value>Nothing found</value>
+  </data>
+  <data name="OwerviewPivotHeader" xml:space="preserve">
+    <value>owerview</value>
+  </data>
+  <data name="RepoText" xml:space="preserve">
+    <value>Repository: </value>
+  </data>
+  <data name="RepoUrlText" xml:space="preserve">
+    <value>Repo URL:</value>
+  </data>
+  <data name="ResourceFlowDirection" xml:space="preserve">
+    <value>LeftToRight</value>
+    <comment>Controls the FlowDirection for all elements in the RootFrame. Set to the traditional direction of this resource file's language</comment>
+  </data>
+  <data name="SearchHeader" xml:space="preserve">
+    <value>FIND...</value>
+  </data>
+  <data name="UpdPivotHeader" xml:space="preserve">
+    <value>updates</value>
+  </data>
+  <data name="VersionText" xml:space="preserve">
+    <value>Version: </value>
+  </data>
+  <data name="AboutPivot" xml:space="preserve">
+    <value>about program</value>
+  </data>
+  <data name="AboutVersionText" xml:space="preserve">
+    <value>Version </value>
+  </data>
+  <data name="AddRepoMessageContent" xml:space="preserve">
+    <value>Enter repo URL:</value>
+  </data>
+  <data name="AddRepoMessageTitle" xml:space="preserve">
+    <value>Add repository</value>
+  </data>
+  <data name="AllAppsUpdatedMessage" xml:space="preserve">
+    <value>All your applications are updated to the latest version.</value>
+  </data>
+  <data name="AppBarAdd" xml:space="preserve">
+    <value>add</value>
+  </data>
+  <data name="AppBarDownload" xml:space="preserve">
+    <value>install</value>
+  </data>
+  <data name="AppBarDownloads" xml:space="preserve">
+    <value>downloads &amp; updates</value>
+  </data>
+  <data name="AppBarRefresh" xml:space="preserve">
+    <value>refresh</value>
+  </data>
+  <data name="AppBarSave" xml:space="preserve">
+    <value>save</value>
+  </data>
+  <data name="AppBarSearch" xml:space="preserve">
+    <value>find...</value>
+  </data>
+  <data name="AppBarSettings" xml:space="preserve">
+    <value>settings</value>
+  </data>
+  <data name="AppsFilterDesc" xml:space="preserve">
+    <value>Enables or disables application filtering. If disabled, UWP (Windows 10 Mobile platform) applications may be displayed that will not install on this OS (WP8.1).</value>
+  </data>
+  <data name="AppsFilterToogleHeader" xml:space="preserve">
+    <value>Apps filtering</value>
+  </data>
+  <data name="BaseRepoMessageContent" xml:space="preserve">
+    <value>The base MEmarket repository cannot be deleted.</value>
+  </data>
+  <data name="BaseRepoMessageTitle" xml:space="preserve">
+    <value>Not so fast ;)</value>
+  </data>
+  <data name="CancelButton" xml:space="preserve">
+    <value>cancel</value>
+  </data>
+  <data name="CategoryBusiness" xml:space="preserve">
+    <value>business</value>
+  </data>
+  <data name="CategoryEducation" xml:space="preserve">
+    <value>education</value>
+  </data>
+  <data name="CategoryEntertainment" xml:space="preserve">
+    <value>entertainment</value>
+  </data>
+  <data name="CategoryGames" xml:space="preserve">
+    <value>games</value>
+  </data>
+  <data name="CategoryHealthFitness" xml:space="preserve">
+    <value>health + fitness</value>
+  </data>
+  <data name="CategoryLifestyle" xml:space="preserve">
+    <value>livestyle</value>
+  </data>
+  <data name="CategoryMusicVideo" xml:space="preserve">
+    <value>music + video</value>
+  </data>
+  <data name="CategoryNewsWeather" xml:space="preserve">
+    <value>news + weather</value>
+  </data>
+  <data name="CategoryOther" xml:space="preserve">
+    <value>other</value>
+  </data>
+  <data name="CategoryPhoto" xml:space="preserve">
+    <value>photo</value>
+  </data>
+  <data name="CategorySocial" xml:space="preserve">
+    <value>social networks</value>
+  </data>
+  <data name="CategorySports" xml:space="preserve">
+    <value>sports</value>
+  </data>
+  <data name="CategoryStore" xml:space="preserve">
+    <value>app stores</value>
+  </data>
+  <data name="CategoryTools" xml:space="preserve">
+    <value>tools</value>
+  </data>
+  <data name="DownloadingPkgError" xml:space="preserve">
+    <value>Error downloading file: </value>
+  </data>
+  <data name="DownloadUrlError" xml:space="preserve">
+    <value>Ссылка на скачивание недоступна.</value>
+  </data>
+  <data name="FindingPkgNameError" xml:space="preserve">
+    <value>Could not find the filename for this version in the repository manifest.</value>
+  </data>
+  <data name="IndexLoadError" xml:space="preserve">
+    <value>Failed to load or recognize index.json from this URL</value>
+  </data>
+  <data name="LiveTileContent" xml:space="preserve">
+    <value>{0}: update!</value>
+  </data>
+  <data name="LiveTileTitle" xml:space="preserve">
+    <value>Downloads &amp; updates</value>
+  </data>
+  <data name="LiveTileUpds" xml:space="preserve">
+    <value>Live tile updates</value>
+  </data>
+  <data name="LiveTileUpdsDesc" xml:space="preserve">
+    <value>When checking for updates, the live tile displays a random app and its current version</value>
+  </data>
+  <data name="MainPivot" xml:space="preserve">
+    <value>general</value>
+  </data>
+  <data name="MEmarketDev" xml:space="preserve">
+    <value>Developer: kameton.dev</value>
+  </data>
+  <data name="OffText" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="OkButton" xml:space="preserve">
+    <value>ok</value>
+  </data>
+  <data name="OnText" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="RepoAlrAddedMessage" xml:space="preserve">
+    <value>This repository has already been added</value>
+  </data>
+  <data name="ReposPivot" xml:space="preserve">
+    <value>repos</value>
+  </data>
+  <data name="RepoUrlError" xml:space="preserve">
+    <value>The URL must start with http:// or https://</value>
+  </data>
+  <data name="RetrievingLinkError" xml:space="preserve">
+    <value>Error retrieving update link: </value>
+  </data>
+  <data name="SearchBoxPlaceholder" xml:space="preserve">
+    <value>start typing here</value>
+  </data>
+  <data name="SettingsHeader" xml:space="preserve">
+    <value>SETTINGS</value>
+  </data>
+  <data name="StartDownloadingError" xml:space="preserve">
+    <value>Ошибка при запуске скачивания:</value>
+  </data>
+  <data name="UpdCheckError" xml:space="preserve">
+    <value>Failed to check for updates: </value>
+  </data>
+  <data name="WarningText" xml:space="preserve">
+    <value>This MEmarket client is currently under development. Bugs, freezes, and errors may occur.</value>
   </data>
 </root>

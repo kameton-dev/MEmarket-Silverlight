@@ -21,7 +21,6 @@ using Windows.Networking;
 using Windows.Storage;
 //using WUT_WP8.UWP;
 using System.Threading;
-using CMDInjectorHelper;
 
 namespace MEmarket
 {
@@ -33,6 +32,7 @@ namespace MEmarket
         public AppPage()
         {
             InitializeComponent();
+            BuildApplicationBar();
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -43,6 +43,8 @@ namespace MEmarket
             if (_currentApp == null) return;
             
             AppPivot.Title = _currentApp.Name ?? "ПРИЛОЖЕНИЕ";
+            AppName.Text = _currentApp.Name ?? string.Empty;
+            DeveloperText.Text = _currentApp.Publisher ?? string.Empty;
             
             if (!string.IsNullOrEmpty(_currentApp.Icon) && _currentApp.Icon.StartsWith("http"))
             {
@@ -52,7 +54,7 @@ namespace MEmarket
             
             MarkdownRenderer.Render(DescriptionText, _currentApp.Summary ?? "");
             SummaryText.Text = _currentApp.Summary ?? "";
-            PublisherText.Text = "";
+            PublisherText.Text = _currentApp.Publisher ?? string.Empty;
             RepositoryText.Text = GetRepositoryName(_currentApp);
             //AppSizeText.Text = "Размер: загрузка...";
             
@@ -60,6 +62,54 @@ namespace MEmarket
             {
                 await LoadEntryAsync(_currentApp.AppUrl);
             }
+        }
+
+        private string GetLocalizedText(JToken token)
+        {
+            if (token == null || token.Type == JTokenType.Null)
+            {
+                return string.Empty;
+            }
+
+            if (token.Type == JTokenType.String)
+            {
+                return token.ToString();
+            }
+
+            var obj = token as JObject;
+            if (obj == null)
+            {
+                return token.ToString();
+            }
+
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            var currentLanguage = culture?.Name ?? string.Empty;
+            var baseLanguage = culture?.TwoLetterISOLanguageName ?? string.Empty;
+
+            var preferredLanguages = new List<string>();
+            if (!string.IsNullOrWhiteSpace(currentLanguage)) preferredLanguages.Add(currentLanguage);
+            if (!string.IsNullOrWhiteSpace(baseLanguage)) preferredLanguages.Add(baseLanguage);
+            preferredLanguages.Add("en");
+            preferredLanguages.Add("ru");
+
+            foreach (var language in preferredLanguages.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var property = obj.Property(language);
+                if (property != null && property.Value != null)
+                {
+                    return property.Value.ToString();
+                }
+            }
+
+            foreach (var property in obj.Properties())
+            {
+                if (property.Value != null)
+                {
+                    return property.Value.ToString();
+                }
+            }
+
+            return string.Empty;
         }
 
         private string GetRepositoryName(AppItem app)
@@ -125,22 +175,46 @@ namespace MEmarket
 
                 if (root["title"] != null)
                 {
-                    AppPivot.Title = root["title"].ToString();
+                    var title = root["title"].ToString();
+                    AppPivot.Title = title;
+                    AppName.Text = title;
                 }
 
                 if (root["summary"] != null)
                 {
-                    SummaryText.Text = root["summary"].ToString();
+                    SummaryText.Text = GetLocalizedText(root["summary"]);
                 }
 
                 if (root["description"] != null)
                 {
-                    MarkdownRenderer.Render(DescriptionText, root["description"].ToString());
+                    MarkdownRenderer.Render(DescriptionText, GetLocalizedText(root["description"]));
+                }
+
+                var bannerUrl = root["banner"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(bannerUrl))
+                {
+                    var fullBannerUrl = App.GetFullUrl(appUrl, bannerUrl);
+                    if (!string.IsNullOrWhiteSpace(fullBannerUrl))
+                    {
+                        BannerImage.Visibility = Visibility.Visible;
+                        BannerImage.Source = new BitmapImage(new Uri(fullBannerUrl));
+                    }
+                    else
+                    {
+                        BannerImage.Visibility = Visibility.Collapsed;
+                    }
+                }
+                else
+                {
+                    BannerImage.Visibility = Visibility.Collapsed;
                 }
                 
                 if (root["creator"] != null)
                 {
-                    PublisherText.Text = root["creator"].ToString();
+                    var creator = root["creator"].ToString();
+                    PublisherText.Text = creator;
+                    DeveloperText.Text = creator;
+                    _currentApp.Publisher = creator;
                 }
 
                 //AppSizeText.Text = "Размер: н/д";
@@ -493,7 +567,7 @@ namespace MEmarket
 
             if (string.IsNullOrEmpty(downloadUrl))
             {
-                MessageBox.Show("Ссылка на скачивание недоступна.", "╮ (. ❛ ᴗ ❛.) ╭", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.DownloadUrlError, "╮ (. ❛ ᴗ ❛.) ╭", MessageBoxButton.OK);
                 return;
             }
 
@@ -502,7 +576,6 @@ namespace MEmarket
                 // Сохранения прилоения в installer_apps.json перед скачиванием
                 try
                 {
-                    // Определяем версию, которую выбрал пользователь
                     string versionToSave = version != null ? version.Version : (_currentApp.LatestVersion ?? "1.0.0.0");
 
                     string repoUrl = "";
@@ -510,8 +583,6 @@ namespace MEmarket
                     {
                         var appUri = new Uri(_currentApp.AppUrl);
                         repoUrl = appUri.Scheme + "://" + appUri.Host;
-
-                        // Если порт нестандартный (например, http://localhost:8080, что маловероятно), добавляем его
                         if (appUri.Port != 80 && appUri.Port != 443)
                         {
                             repoUrl += ":" + appUri.Port;
@@ -557,7 +628,7 @@ namespace MEmarket
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ошибка при запуске скачивания: " + ex.Message, "〣( ºΔº )〣", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.StartDownloadingError + ex.Message, "〣( ºΔº )〣", MessageBoxButton.OK);
             }
         }
 
@@ -582,6 +653,23 @@ namespace MEmarket
                 image.Tag = currentUri;
                 image.Source = new BitmapImage(fallbackUri);
             }
+        }
+
+        private void BuildApplicationBar()
+        {
+            ApplicationBar = new ApplicationBar();
+
+            ApplicationBarIconButton buttonSave = new ApplicationBarIconButton();
+            buttonSave.IconUri = new Uri("/Assets/AppBar/save.png", UriKind.Relative);
+            buttonSave.Text = MEmarket.Resources.AppResources.AppBarSave;
+            buttonSave.Click += SaveToDevice_Click;
+            ApplicationBar.Buttons.Add(buttonSave);
+
+            //ApplicationBarIconButton buttonDownload = new ApplicationBarIconButton();
+            //buttonDownload.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
+            //buttonDownload.Text = MEmarket.Resources.AppResources.AppBarDownload;
+            //buttonDownload.Click += SaveToDevice_Click;
+            //ApplicationBar.Buttons.Add(buttonDownload);
         }
     }
 }

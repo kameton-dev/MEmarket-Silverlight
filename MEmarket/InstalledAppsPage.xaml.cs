@@ -84,12 +84,12 @@ namespace MEmarket
 
                 if (AvailableUpdates.Count == 0)
                 {
-                    MessageBox.Show("Все ваши приложения обновлены до актуальной версии.", "＼(＾▽＾)／", MessageBoxButton.OK);
+                    MessageBox.Show(MEmarket.Resources.AppResources.AllAppsUpdatedMessage, "＼(＾▽＾)／", MessageBoxButton.OK);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Не удалось проверить обновления: " + ex.Message, "(｡╯︵╰｡)", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.UpdCheckError + ex.Message, "(｡╯︵╰｡)", MessageBoxButton.OK);
             }
             finally
             {
@@ -212,14 +212,14 @@ namespace MEmarket
                     else
                     {
                         SetLoading(false);
-                        MessageBox.Show("Не удалось найти имя файла для этой версии в манифесте репозитория.", "┐(︶▽︶)┌", MessageBoxButton.OK);
+                        MessageBox.Show(MEmarket.Resources.AppResources.FindingPkgNameError, "┐(︶▽︶)┌", MessageBoxButton.OK);
                     }
                 }
             }
             catch (Exception ex)
             {
                 SetLoading(false);
-                MessageBox.Show("Ошибка получения ссылки на обновление: " + ex.Message, "(・・;)ゞ", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.RetrievingLinkError + ex.Message, "(・・;)ゞ", MessageBoxButton.OK);
             }
         }
         

@@ -18,6 +18,7 @@ namespace MEmarket
         {
             InitializeComponent();
             DataContext = App.ViewModel;
+            BuildApplicationBar();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -109,6 +110,33 @@ namespace MEmarket
                 image.Tag = currentUri;
                 image.Source = new BitmapImage(fallbackUri);
             }
+        }
+
+        private void BuildApplicationBar()
+        {
+            ApplicationBar = new ApplicationBar();
+            ApplicationBar.Opacity = 0.8;
+            
+            ApplicationBarMenuItem menuRefresh = new ApplicationBarMenuItem();
+            menuRefresh.Text = MEmarket.Resources.AppResources.AppBarRefresh;
+            menuRefresh.Click += Refresh_Click;
+            ApplicationBar.MenuItems.Add(menuRefresh);
+            
+            ApplicationBarMenuItem menuDownloads = new ApplicationBarMenuItem();
+            menuDownloads.Text = MEmarket.Resources.AppResources.AppBarDownloads;
+            menuDownloads.Click += InstalledApps_Click;
+            ApplicationBar.MenuItems.Add(menuDownloads);
+            
+            ApplicationBarMenuItem menuSettings = new ApplicationBarMenuItem();
+            menuSettings.Text = MEmarket.Resources.AppResources.AppBarSettings;
+            menuSettings.Click += Settings_Click;
+            ApplicationBar.MenuItems.Add(menuSettings);
+
+            ApplicationBarIconButton buttonSearch = new ApplicationBarIconButton();
+            buttonSearch.IconUri = new Uri("/Assets/AppBar/feature.search.png", UriKind.Relative);
+            buttonSearch.Text = MEmarket.Resources.AppResources.AppBarSearch;
+            buttonSearch.Click += Search_Click;
+            ApplicationBar.Buttons.Add(buttonSearch);
         }
     }
 }

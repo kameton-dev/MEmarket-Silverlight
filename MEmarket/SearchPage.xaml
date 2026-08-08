@@ -46,8 +46,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="12,17,12,0">
-            <TextBlock Text="НАЙТИ..." Style="{StaticResource PhoneTextNormalStyle}"/>
-            <toolkit:PhoneTextBox x:Name="SearchBox" PlaceholderText="введите название/описание" TextChanged="SearchBoxTextChanged"/>
+            <TextBlock Text="{Binding LocalizedResources.SearchHeader, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextNormalStyle}"/>
+            <toolkit:PhoneTextBox x:Name="SearchBox" PlaceholderText="{Binding LocalizedResources.SearchBoxPlaceholder, Source={StaticResource LocalizedStrings}}" TextChanged="SearchBoxTextChanged"/>
         </StackPanel>
 
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
@@ -69,7 +69,7 @@
                 </phone:LongListSelector>
 
                 <TextBlock x:Name="NoResultsText"
-                           Text="Ничего не найдено"
+                           Text="{Binding LocalizedResources.NoResultsText, Source={StaticResource LocalizedStrings}}"
                            Style="{StaticResource PhoneTextLargeStyle}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Top"

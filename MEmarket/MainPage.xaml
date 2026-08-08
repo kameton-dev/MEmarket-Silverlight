@@ -39,21 +39,10 @@
         </toolkit:NavigationOutTransition>
     </toolkit:TransitionService.NavigationOutTransition>
 
-    <phone:PhoneApplicationPage.ApplicationBar>
-        <shell:ApplicationBar Opacity="0.8">
-            <shell:ApplicationBar.MenuItems>
-                <shell:ApplicationBarMenuItem IsEnabled="True" Text="обновить" Click="Refresh_Click"/>
-                <shell:ApplicationBarMenuItem IsEnabled="True" Text="загрузки и обновления" Click="InstalledApps_Click"/>
-                <shell:ApplicationBarMenuItem IsEnabled="True" Text="настройки" Click="Settings_Click"/>
-            </shell:ApplicationBar.MenuItems>
-            <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/feature.search.png" IsEnabled="True" Text="найти..." Click="Search_Click"/>
-        </shell:ApplicationBar>
-    </phone:PhoneApplicationPage.ApplicationBar>
-
     <Grid x:Name="LayoutRoot" Background="Transparent">
         <phone:Panorama Title="MEmarket">
-            
-            <phone:PanoramaItem Header="категории">
+
+            <phone:PanoramaItem Header="{Binding LocalizedResources.CategoriesHeader, Source={StaticResource LocalizedStrings}}">
                 <phone:LongListSelector Margin="0,0,-22,0" ItemsSource="{Binding Categories}" SelectionChanged="CategoriesList_SelectionChanged">
                     <phone:LongListSelector.ItemTemplate>
                         <DataTemplate>
@@ -70,7 +59,7 @@
                     <phone:LongListSelector.ListHeaderTemplate>
                         <DataTemplate>
                             <Grid Margin="12,0,0,24">
-                                <TextBlock Text="список" Style="{StaticResource PanoramaItemHeaderTextStyle}"/>
+                                <TextBlock Text="{Binding LocalizedResources.AppListHeader, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PanoramaItemHeaderTextStyle}"/>
                             </Grid>
                         </DataTemplate>
                     </phone:LongListSelector.ListHeaderTemplate>

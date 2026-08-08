@@ -16,6 +16,7 @@
     <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
     <SilverlightApplication>true</SilverlightApplication>
     <SupportedCultures>
+      ru;ru-RU;
     </SupportedCultures>
     <XapOutputs>true</XapOutputs>
     <GenerateSilverlightManifest>true</GenerateSilverlightManifest>
@@ -114,6 +115,11 @@
     <Compile Include="RepoPropsPage.xaml.cs">
       <DependentUpon>RepoPropsPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Resources\AppResources.ru.Designer.cs">
+      <DependentUpon>AppResources.ru.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Resources\AppResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -122,7 +128,6 @@
     <Compile Include="SearchPage.xaml.cs">
       <DependentUpon>SearchPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Services\LiveTileManager.cs" />
     <Compile Include="Services\LocalAppsManager.cs" />
     <Compile Include="Services\MarkdownRenderer.cs" />
     <Compile Include="Services\MEinstaller.cs" />
@@ -221,6 +226,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\AppResources.ru.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>AppResources.ru.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\AppResources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>AppResources.Designer.cs</LastGenOutput>

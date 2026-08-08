@@ -47,12 +47,26 @@
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
         <phone:Pivot x:Name="AppPivot" Title="ПРИЛОЖЕНИЕ">
-            <phone:PivotItem Header="обзор">
+            <phone:PivotItem Header="{Binding LocalizedResources.OwerviewPivotHeader, Source={StaticResource LocalizedStrings}}">
                 <Grid>
                     <ScrollViewer>
                         <StackPanel Margin="12,0,12,24">
-                            <Image x:Name="AppIcon" Source="/Assets/StoreLogo.png" Width="180" Height="180" Margin="0,0,0,16" HorizontalAlignment="Left" ImageFailed="IconImage_ImageFailed"/>
+                            <Image x:Name="BannerImage"
+                                   Width="432"
+                                   Height="243"
+                                   Margin="0,0,0,16"
+                                   HorizontalAlignment="Center"
+                                   Stretch="UniformToFill"
+                                   Visibility="Collapsed"
+                                   ImageFailed="IconImage_ImageFailed"/>
 
+                            <Grid Margin="0,0,0,16" Width="432" HorizontalAlignment="Center">
+                                <Border Background="{StaticResource PhoneAccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <Image x:Name="AppIcon" Source="/Assets/StoreLogo.png" Width="180" Height="180" Margin="0" HorizontalAlignment="Left" ImageFailed="IconImage_ImageFailed"/>
+                                </Border>
+                                <TextBlock x:Name="AppName" Text="App name" FontSize="36" FontFamily="Segoe WP SemiLight" VerticalAlignment="Top" Margin="195,10,0,0" Width="237"/>
+                                <TextBlock x:Name="DeveloperText" Text="Developer" VerticalAlignment="Top" Margin="195,63,0,0" Foreground="{StaticResource PhoneSubtleBrush}"/>
+                            </Grid>
                             <TextBlock x:Name="SummaryText" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" />
 
                             <RichTextBox x:Name="DescriptionText" IsReadOnly="True" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="-12,0" Padding="0"/>
@@ -70,29 +84,29 @@
                 </Grid>
             </phone:PivotItem>
 
-            <phone:PivotItem Header="детали">
+            <phone:PivotItem Header="{Binding LocalizedResources.DetailsPivotHeader, Source={StaticResource LocalizedStrings}}">
                 <Grid>
                     <ScrollViewer>
                         <StackPanel Margin="12,0,12,24">
-                            <TextBlock Text="Информация" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP SemiLight" FontSize="32"/>
+                            <TextBlock Text="{Binding LocalizedResources.InfoTextBlock, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP SemiLight" FontSize="32"/>
                             <StackPanel Margin="12,0" Orientation="Horizontal">
-                                <TextBlock Text="Версия: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock Text="{Binding LocalizedResources.VersionText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
                                 <TextBlock x:Name="AppVersionText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
                             </StackPanel>
                             <toolkit:ListPicker x:Name="VersionComboBox" Header="" Visibility="Visible" Margin="0" SelectionChanged="VersionComboBox_SelectionChanged"/>
 
                             <StackPanel Margin="12,0">
-                                <TextBlock Text="Возможости: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock Text="{Binding LocalizedResources.CapsText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
                                 <StackPanel x:Name="CapabilitiesPanel" Margin="0"/>
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="12,0">
-                                <TextBlock Text="Разработчик: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock Text="{Binding LocalizedResources.DevText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
                                 <TextBlock x:Name="PublisherText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="12,0">
-                                <TextBlock Text="Репозиторий: " Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock Text="{Binding LocalizedResources.RepoText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
                                 <TextBlock x:Name="RepositoryText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
                             </StackPanel>
 

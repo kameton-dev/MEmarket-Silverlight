@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using System.IO.IsolatedStorage;
+using Windows.ApplicationModel;
 
 namespace MEmarket
 {
@@ -25,6 +26,7 @@ namespace MEmarket
         public SettingsPage()
         {
             InitializeComponent();
+            BuildApplicationBar();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -33,18 +35,19 @@ namespace MEmarket
             
             RepositoriesList.ItemsSource = null;
             RepositoriesList.ItemsSource = App.Repositories;
-
-            // Считываем сохраненное значение (по умолчанию false)
             var settings = IsolatedStorageSettings.ApplicationSettings;
             bool isEnabled = false;
             if (settings.Contains(SettingKey))
             {
                 isEnabled = (bool)settings[SettingKey];
             }
-
-            // Устанавливаем состояние переключателя
+            
             LiveTileToggle.IsChecked = isEnabled;
             UpdateToggleText(isEnabled);
+
+            AppsFilterToggle.IsChecked = App.ShowAppTypeFilter;
+            UpdateAppsFilterToggleText(App.ShowAppTypeFilter);
+            DisplayAppVersion();
         }
 
         private void ShowAllOsToggle_Checked(object sender, RoutedEventArgs e)
@@ -59,6 +62,24 @@ namespace MEmarket
             App.ShowAllOs = false;
             App.SaveSettings();
             App.ViewModel.ResetLoadState();
+        }
+
+        private void AppsFilterToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            App.ShowAppTypeFilter = true;
+            App.SaveSettings();
+            UpdateAppsFilterToggleText(true);
+            App.ViewModel.ResetLoadState();
+            App.ViewModel.LoadData();
+        }
+
+        private void AppsFilterToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            App.ShowAppTypeFilter = false;
+            App.SaveSettings();
+            UpdateAppsFilterToggleText(false);
+            App.ViewModel.ResetLoadState();
+            App.ViewModel.LoadData();
         }
 
         private void RepositoriesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -117,11 +138,11 @@ namespace MEmarket
             var textBox = new TextBox { Text = "http://" };
             var messageBox = new CustomMessageBox
             {
-                Title = "Добавить репозиторий",
-                Message = "Введите URL-адрес index.json репозитория:",
+                Title = MEmarket.Resources.AppResources.AddRepoMessageTitle,
+                Message = MEmarket.Resources.AppResources.AddRepoMessageContent,
                 Content = textBox,
-                LeftButtonContent = "ок",
-                RightButtonContent = "отмена"
+                LeftButtonContent = MEmarket.Resources.AppResources.OkButton,
+                RightButtonContent = MEmarket.Resources.AppResources.CancelButton
             };
 
             messageBox.Dismissed += async (s, args) =>
@@ -133,13 +154,13 @@ namespace MEmarket
 
                     if (App.Repositories.Any(r => string.Equals(r.Url, url, StringComparison.OrdinalIgnoreCase)))
                     {
-                        MessageBox.Show("Этот репозиторий уже добавлен", "(・・ ) ? ", MessageBoxButton.OK);
+                        MessageBox.Show(MEmarket.Resources.AppResources.RepoAlrAddedMessage, "(・・ ) ? ", MessageBoxButton.OK);
                         return;
                     }
 
                     if (!Uri.IsWellFormedUriString(url, UriKind.Absolute) || (!url.StartsWith("http://") && !url.StartsWith("https://")))
                     {
-                        MessageBox.Show("Некорректный URL. Должен начинаться с http:// или https://", "(・_・;)", MessageBoxButton.OK);
+                        MessageBox.Show(MEmarket.Resources.AppResources.RepoUrlError, "(・_・;)", MessageBoxButton.OK);
                         return;
                     }
 
@@ -149,7 +170,7 @@ namespace MEmarket
 
                     if (!isValid)
                     {
-                        MessageBox.Show("Не удалось загрузить или распознать index.json с этого URL", "╮(￣～￣)╭ ", MessageBoxButton.OK);
+                        MessageBox.Show(MEmarket.Resources.AppResources.IndexLoadError, "╮(￣～￣)╭ ", MessageBoxButton.OK);
                         return;
                     }
 
@@ -177,8 +198,6 @@ namespace MEmarket
         {
             SaveSetting(false);
             UpdateToggleText(false);
-
-            // При выключении настройки сразу очищаем живую плитку на рабочем столе
             TileManager.ClearTile();
         }
 
@@ -193,7 +212,15 @@ namespace MEmarket
         {
             if (LiveTileToggle != null)
             {
-                LiveTileToggle.Content = isEnabled ? "Вкл." : "Выкл.";
+                LiveTileToggle.Content = isEnabled ? MEmarket.Resources.AppResources.OnText : MEmarket.Resources.AppResources.OffText;
+            }
+        }
+
+        private void UpdateAppsFilterToggleText(bool isEnabled)
+        {
+            if (AppsFilterToggle != null)
+            {
+                AppsFilterToggle.Content = isEnabled ? MEmarket.Resources.AppResources.OnText : MEmarket.Resources.AppResources.OffText;
             }
         }
 
@@ -202,6 +229,38 @@ namespace MEmarket
             if (this.ApplicationBar != null)
             {
                 this.ApplicationBar.IsVisible = (SettingsPivot.SelectedIndex == 1);
+            }
+        }
+
+        private void BuildApplicationBar()
+        {
+            ApplicationBar = new ApplicationBar();
+            ApplicationBar.IsVisible = false;
+            
+            ApplicationBarIconButton buttonAdd = new ApplicationBarIconButton();
+            buttonAdd.IconUri = new Uri("/Assets/AppBar/new.png", UriKind.Relative);
+            buttonAdd.Text = MEmarket.Resources.AppResources.AppBarAdd;
+            buttonAdd.Click += AddRepoButton_Click;
+            ApplicationBar.Buttons.Add(buttonAdd);
+        }
+
+        private void DisplayAppVersion()
+        {
+            try
+            {
+                PackageVersion pv = Package.Current.Id.Version;
+
+                string formattedVersion = string.Format("{0}.{1}.{2}.{3}",
+                    pv.Major,
+                    pv.Minor,
+                    pv.Build,
+                    pv.Revision);
+
+                AppVersionTextBlock.Text = formattedVersion;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error reading app version: " + ex.Message);
             }
         }
     }

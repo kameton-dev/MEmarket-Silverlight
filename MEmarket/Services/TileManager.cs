@@ -30,18 +30,25 @@ namespace MEmarket.Services
                 if (updates != null && updates.Count > 0)
                 {
                     var firstUpdate = updates[0];
-                    
+
+                    string updateMessage = string.Format(
+                        MEmarket.Resources.AppResources.LiveTileContent,
+                        firstUpdate.Name
+                    );
+
+                    string versionsMessage = string.Format(
+                        "{0} ➔ {1}",
+                        firstUpdate.InstalledVersion,
+                        firstUpdate.NewVersion
+                    );
+
                     FlipTileData tileData = new FlipTileData
                     {
                         Count = updates.Count,
-                        
-                        BackTitle = "MEmarket",
-                        BackContent = string.Format("{0}: обновление!\n{1} ➔ {2}",
-                            firstUpdate.Name,
-                            firstUpdate.InstalledVersion,
-                            firstUpdate.NewVersion)
+                        BackTitle = MEmarket.Resources.AppResources.LiveTileTitle,
+                        BackContent = updateMessage + "\n" + versionsMessage
                     };
-                    
+
                     primaryTile.Update(tileData);
                 }
                 else

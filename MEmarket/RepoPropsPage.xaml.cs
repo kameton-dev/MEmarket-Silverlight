@@ -82,7 +82,7 @@ namespace MEmarket
             
             if (_currentRepo.Url == "http://millenniummarket.ru/index.json")
             {
-                MessageBox.Show("Базовый репозиторий MEmarket нельзя удалить.", "Не так быстро ;)", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.BaseRepoMessageContent, MEmarket.Resources.AppResources.BaseRepoMessageTitle, MessageBoxButton.OK);
                 return;
             }
 

@@ -40,7 +40,7 @@
 
     <phone:PhoneApplicationPage.ApplicationBar>
         <shell:ApplicationBar>
-            <shell:ApplicationBarIconButton IconUri="/Toolkit.Content/ApplicationBar.Delete.png" IsEnabled="True" Text="удалить" Click="DeleteRepoMenuItem_Click"/>
+            <shell:ApplicationBarIconButton IconUri="/Toolkit.Content/ApplicationBar.Delete.png" IsEnabled="True" Text="delete" Click="DeleteRepoMenuItem_Click"/>
         </shell:ApplicationBar>
     </phone:PhoneApplicationPage.ApplicationBar>
 
@@ -57,13 +57,13 @@
 
         <ScrollViewer Grid.Row="1" Margin="12,0,12,0">
             <StackPanel>
-                <TextBlock Text="URL репозитория:" Style="{StaticResource PhoneTextSmallStyle}" Opacity="0.6" Margin="0,0,0,2"/>
+                <TextBlock Text="{Binding LocalizedResources.RepoUrlText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSmallStyle}" Opacity="0.6" Margin="0,0,0,2"/>
                 <TextBlock x:Name="RepoUrlText" Text="" TextWrapping="Wrap" Margin="0,0,0,24"/>
 
-                <TextBlock Text="Создатель:" Style="{StaticResource PhoneTextSmallStyle}" Opacity="0.6" Margin="0,0,0,2"/>
+                <TextBlock Text="{Binding LocalizedResources.CreatorText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSmallStyle}" Opacity="0.6" Margin="0,0,0,2"/>
                 <TextBlock x:Name="CreatorText" Text="" TextWrapping="Wrap" Margin="0,0,0,24"/>
 
-                <TextBlock Text="Последнее обновление:" Style="{StaticResource PhoneTextSmallStyle}" Opacity="0.6" Margin="0,0,0,2"/>
+                <TextBlock Text="{Binding LocalizedResources.LastUpdText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSmallStyle}" Opacity="0.6" Margin="0,0,0,2"/>
                 <TextBlock x:Name="LastUpdatedText" Text="" TextWrapping="Wrap" Margin="0,0,0,24"/>
             </StackPanel>
         </ScrollViewer>

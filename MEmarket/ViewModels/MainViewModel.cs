@@ -250,17 +250,24 @@ namespace MEmarket.ViewModels
                 new { Key = "education", Title = MEmarket.Resources.AppResources.CategoryEducation }
             };
 
+            var knownKeys = categories.Select(c => c.Key).ToList();
+
             foreach (var cat in categories)
             {
-                var items = allApps.Where(app => string.Equals(app.Category, cat.Key, StringComparison.OrdinalIgnoreCase)).ToList();
+                var items = allApps
+                    .Where(app => string.Equals(app.Category, cat.Key, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
                 if (items.Count > 0)
                 {
                     groups.Add(new CategoryGroup { Title = cat.Title, Items = items });
                 }
             }
-            
-            var knownKeys = categories.Select(c => c.Key).ToList();
-            var otherItems = allApps.Where(app => !knownKeys.Any(k => string.Equals(app.Category, k, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            var otherItems = allApps
+                .Where(app => !knownKeys.Any(k => string.Equals(app.Category, k, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
             if (otherItems.Count > 0)
             {
                 groups.Add(new CategoryGroup { Title = MEmarket.Resources.AppResources.CategoryOther, Items = otherItems });

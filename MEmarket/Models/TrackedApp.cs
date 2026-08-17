@@ -25,7 +25,7 @@ namespace MEmarket.Models
         [DataMember]
         public DateTime InstallDate { get; set; }
 
-        public string InstalledVersionText => "Версия: " + InstalledVersion;
+        public string InstalledVersionText => MEmarket.Resources.AppResources.VersionText + InstalledVersion;
     }
 
     [DataContract]
@@ -35,7 +35,7 @@ namespace MEmarket.Models
         public string NewVersion { get; set; }
         public string VersionProgress => InstalledVersion + " ➔ " + NewVersion;
         
-        public string StatusText { get; set; } = "Доступно обновление";
+        public string StatusText { get; set; } = MEmarket.Resources.AppResources.UpdAvailableText;
         public double ProgressValue { get; set; } = 0;
         public bool IsDownloading { get; set; } = false;
     }

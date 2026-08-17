@@ -341,4 +341,51 @@
   <data name="WarningText" xml:space="preserve">
     <value>This MEmarket client is currently under development. Bugs, freezes, and errors may occur.</value>
   </data>
+  <data name="AppTypeText" xml:space="preserve">
+    <value>Application type: </value>
+  </data>
+  <data name="CategoryText" xml:space="preserve">
+    <value>Category: </value>
+  </data>
+  <data name="ExtraTextBlock" xml:space="preserve">
+    <value>Extra</value>
+  </data>
+  <data name="AppInstallSuccessMessage" xml:space="preserve">
+    <value> has been installed on your device!</value>
+  </data>
+  <data name="DeployingErrorMessageFormat" xml:space="preserve">
+    <value>Error installing application {0}.
+
+Error code: {1}
+Description: {2}
+
+Detailed installer logs are located here:
+C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
+  </data>
+  <data name="IdkLol" xml:space="preserve">
+    <value>idk lol</value>
+  </data>
+  <data name="InstallProgressTextDownloading" xml:space="preserve">
+    <value>Downloading </value>
+  </data>
+  <data name="InstallProgressTextInstalling" xml:space="preserve">
+    <value>Deploying </value>
+  </data>
+  <data name="LoadingText" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="SavingPkgError" xml:space="preserve">
+    <value>Error while saving file: </value>
+  </data>
+  <data name="TelnetNotRunningMessage" xml:space="preserve">
+    <value>Warning: The local Telnet server is not running.
+
+Ensure that you CMD-Injected your phone. Without this, application installation will not work.</value>
+  </data>
+  <data name="TelnetNotRunningTitle" xml:space="preserve">
+    <value>Oops! O﹏o</value>
+  </data>
+  <data name="UpdAvailableText" xml:space="preserve">
+    <value>Update available</value>
+  </data>
 </root>

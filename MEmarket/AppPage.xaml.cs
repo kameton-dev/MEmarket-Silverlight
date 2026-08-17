@@ -19,7 +19,6 @@ using Windows.Networking.Sockets;
 using System.Text;
 using Windows.Networking;
 using Windows.Storage;
-//using WUT_WP8.UWP;
 using System.Threading;
 
 namespace MEmarket
@@ -28,6 +27,7 @@ namespace MEmarket
     {
         private AppItem _currentApp;
         private List<AppVersion> _versions;
+        private int _currentScreenshotIndex = -1;
 
         public AppPage()
         {
@@ -42,9 +42,11 @@ namespace MEmarket
             _currentApp = App.SelectedApp;
             if (_currentApp == null) return;
             
-            AppPivot.Title = _currentApp.Name ?? "ПРИЛОЖЕНИЕ";
+            AppPivot.Title = _currentApp.Name ?? "APP";
             AppName.Text = _currentApp.Name ?? string.Empty;
             DeveloperText.Text = _currentApp.Publisher ?? string.Empty;
+            CategoryText.Text = GetDisplayCategory(_currentApp.Category);
+            AppTypeText.Text = GetDisplayAppType(_currentApp.AppType);
             
             if (!string.IsNullOrEmpty(_currentApp.Icon) && _currentApp.Icon.StartsWith("http"))
             {
@@ -62,6 +64,116 @@ namespace MEmarket
             {
                 await LoadEntryAsync(_currentApp.AppUrl);
             }
+        }
+
+        private void UpdateAppMetadataText()
+        {
+            if (_currentApp == null) return;
+
+            CategoryText.Text = GetDisplayCategory(_currentApp.Category);
+            AppTypeText.Text = GetDisplayAppType(_currentApp.AppType);
+        }
+
+        private string GetDisplayCategory(string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                return MEmarket.Resources.AppResources.CategoryOther;
+            }
+
+            var key = category.Trim();
+            if (string.IsNullOrEmpty(key))
+            {
+                return MEmarket.Resources.AppResources.CategoryOther;
+            }
+
+            switch (key.ToLowerInvariant())
+            {
+                case "games":
+                    return MEmarket.Resources.AppResources.CategoryGames;
+                case "store":
+                    return MEmarket.Resources.AppResources.CategoryStore;
+                case "entertainment":
+                    return MEmarket.Resources.AppResources.CategoryEntertainment;
+                case "music+video":
+                    return MEmarket.Resources.AppResources.CategoryMusicVideo;
+                case "tools":
+                    return MEmarket.Resources.AppResources.CategoryTools;
+                case "livestyle":
+                    return MEmarket.Resources.AppResources.CategoryLifestyle;
+                case "news+weather":
+                    return MEmarket.Resources.AppResources.CategoryNewsWeather;
+                case "health+fitness":
+                    return MEmarket.Resources.AppResources.CategoryHealthFitness;
+                case "photo":
+                    return MEmarket.Resources.AppResources.CategoryPhoto;
+                case "social":
+                    return MEmarket.Resources.AppResources.CategorySocial;
+                case "sports":
+                    return MEmarket.Resources.AppResources.CategorySports;
+                case "business":
+                    return MEmarket.Resources.AppResources.CategoryBusiness;
+                case "education":
+                    return MEmarket.Resources.AppResources.CategoryEducation;
+                default:
+                    return MEmarket.Resources.AppResources.CategoryOther;
+            }
+        }
+
+        private string GetDisplayAppType(string appType)
+        {
+            if (string.IsNullOrWhiteSpace(appType))
+            {
+                return MEmarket.Resources.AppResources.IdkLol;
+            }
+
+            var normalized = appType.Trim();
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return MEmarket.Resources.AppResources.IdkLol;
+            }
+
+            switch (normalized.ToLowerInvariant())
+            {
+                case "silverlight":
+                    return "Silverlight";
+                case "winrt":
+                    return "WinRT";
+                case "xap":
+                    return "XAP";
+                case "appx":
+                    return "APPX";
+                default:
+                    return FormatReadableText(normalized.Replace("_", " ").Replace("-", " "));
+            }
+        }
+
+        private string FormatReadableText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return MEmarket.Resources.AppResources.IdkLol;
+            }
+
+            var words = text.Split(' ');
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(words[i])) continue;
+
+                var word = words[i].Trim();
+                if (word.Length == 0) continue;
+
+                var first = char.ToUpperInvariant(word[0]);
+                if (word.Length == 1)
+                {
+                    words[i] = first.ToString();
+                    continue;
+                }
+
+                words[i] = first + word.Substring(1).ToLowerInvariant();
+            }
+
+            return string.Join(" ", words);
         }
 
         private string GetLocalizedText(JToken token)
@@ -114,7 +226,7 @@ namespace MEmarket
 
         private string GetRepositoryName(AppItem app)
         {
-            if (app == null) return "неизвестно";
+            if (app == null) return MEmarket.Resources.AppResources.IdkLol;
             
             if (!string.IsNullOrEmpty(app.RepositoryName))
             {
@@ -145,7 +257,7 @@ namespace MEmarket
                 catch { }
             }
 
-            return "неизвестно";
+            return MEmarket.Resources.AppResources.IdkLol;
         }
 
         private async Task LoadEntryAsync(string appUrl)
@@ -156,7 +268,7 @@ namespace MEmarket
                 {
                     IsVisible = true,
                     IsIndeterminate = true,
-                    Text = "Загрузка..."
+                    Text = MEmarket.Resources.AppResources.LoadingText
                 };
                 SystemTray.SetProgressIndicator(this, progressIndicator);
 
@@ -217,6 +329,20 @@ namespace MEmarket
                     _currentApp.Publisher = creator;
                 }
 
+                if (root["category"] != null)
+                {
+                    var category = root["category"].ToString();
+                    _currentApp.Category = category;
+                    CategoryText.Text = GetDisplayCategory(category);
+                }
+
+                if (root["app_type"] != null)
+                {
+                    var appType = root["app_type"].ToString();
+                    _currentApp.AppType = appType;
+                    AppTypeText.Text = GetDisplayAppType(appType);
+                }
+
                 //AppSizeText.Text = "Размер: н/д";
                 
                 var screenshotsArray = root["screenshots"] as JArray;
@@ -240,6 +366,7 @@ namespace MEmarket
                             };
                             img.ImageFailed += IconImage_ImageFailed;
                             ScreenshotsPanel.Children.Add(img);
+                            img.Tap += Screenshot_Tap;
                         }
                     }
 
@@ -266,7 +393,7 @@ namespace MEmarket
                 {
                     CapabilitiesPanel.Children.Add(new TextBlock
                     {
-                        Text = "Не указано",
+                        Text = MEmarket.Resources.AppResources.IdkLol,
                         Opacity = 0.6
                     });
                 }
@@ -309,7 +436,7 @@ namespace MEmarket
                 }
                 else
                 {
-                    AppVersionText.Text = "неизвестно";
+                    AppVersionText.Text = MEmarket.Resources.AppResources.IdkLol;
                     AppVersionText.Visibility = Visibility.Visible;
                     VersionComboBox.Visibility = Visibility.Collapsed;
                 }
@@ -320,12 +447,13 @@ namespace MEmarket
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("entry.json load error: " + ex.Message);
-                MarkdownRenderer.Render(DescriptionText, _currentApp?.Summary ?? "Не удалось загрузить описание.");
+                MarkdownRenderer.Render(DescriptionText, _currentApp?.Summary ?? MEmarket.Resources.AppResources.IdkLol);
                 SummaryText.Text = _currentApp?.Summary ?? "";
                 //AppSizeText.Text = "Размер: н/д";
-                AppVersionText.Text =(_currentApp?.LatestVersion ?? "неизвестно");
+                UpdateAppMetadataText();
+                AppVersionText.Text =(_currentApp?.LatestVersion ?? MEmarket.Resources.AppResources.IdkLol);
                 CapabilitiesPanel.Children.Clear();
-                CapabilitiesPanel.Children.Add(new TextBlock { Text = "Не удалось загрузить.", Opacity = 0.6 });
+                CapabilitiesPanel.Children.Add(new TextBlock { Text = MEmarket.Resources.AppResources.IdkLol, Opacity = 0.6 });
                 SystemTray.SetProgressIndicator(this, null);
             }
         }
@@ -358,21 +486,19 @@ namespace MEmarket
             return baseUrl + version.AppFile;
         }
 
-        // --- ПОПЫТКИ РАЗВЕРТЫВАНИЯ ПРИЛОЖЕНИЙ СРАЗУ ПОСЛЕ СКАЧИВАНИЯ ---
-        // ВНИМАНИЕ: ИСХОДНИКИ ВЗЯТЫ ИЗ ДЕКОМПИЛИРОВАННОЙ LIVESTORE
-        //TODO: либо удалить либо перелопатить
+        // --- РАЗВЕРТЫВАНИЕ ПРИЛОЖЕНИЙ СРАЗУ ПОСЛЕ СКАЧИВАНИЯ ---
 
-        /*private async void Install_Click(object sender, EventArgs e)
+        private async void Install_Click(object sender, EventArgs e)
         {
             var version = GetSelectedVersion();
             var downloadUrl = BuildDownloadUrl(version);
 
             if (string.IsNullOrEmpty(downloadUrl))
             {
-                MessageBox.Show("Ссылка на скачивание недоступна.", "╮ (. ❛ ᴗ ❛.) ╭", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.DownloadUrlError, "╮ (. ❛ ᴗ ❛.) ╭", MessageBoxButton.OK);
                 return;
             }
-            
+
             if (ApplicationBar != null)
             {
                 foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
@@ -385,7 +511,7 @@ namespace MEmarket
             {
                 IsVisible = true,
                 IsIndeterminate = true,
-                Text = "Downloading " + (_currentApp?.Name ?? "app") + "..."
+                Text = MEmarket.Resources.AppResources.InstallProgressTextDownloading + (_currentApp?.Name ?? "???") + "..."
             };
             SystemTray.SetProgressIndicator(this, progressIndicator);
 
@@ -399,7 +525,8 @@ namespace MEmarket
                     Uri uri = new Uri(downloadUrl);
                     string fileExt = Path.GetExtension(uri.AbsolutePath).ToLower();
                     if (string.IsNullOrEmpty(fileExt)) fileExt = ".xap";
-                    
+
+                    // Сохранение временного файла во внутреннюю память приложения
                     string fileName = "temp_install_package" + fileExt;
                     downloadedFile = await localFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
 
@@ -411,21 +538,22 @@ namespace MEmarket
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error saving file: " + ex.Message, "MEmarket", MessageBoxButton.OK);
+                    MessageBox.Show(MEmarket.Resources.AppResources.SavingPkgError + ex.Message, "(╯︵╰)", MessageBoxButton.OK);
                 }
 
                 if (downloadedFile != null)
                 {
+                    // Файл скачан, переход к установке
                     progressIndicator.IsVisible = false;
                     SystemTray.SetProgressIndicator(this, null);
-                    
+
                     await InstallPackageAsync(downloadedFile);
                 }
                 else
                 {
                     progressIndicator.IsVisible = false;
                     SystemTray.SetProgressIndicator(this, null);
-                    MessageBox.Show("Download failed.", "MEmarket", MessageBoxButton.OK);
+                    MessageBox.Show(MEmarket.Resources.AppResources.DownloadingPkgError, "(☆_@)", MessageBoxButton.OK);
 
                     if (ApplicationBar != null)
                     {
@@ -438,7 +566,7 @@ namespace MEmarket
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error downloading file: " + ex.Message, "MEmarket", MessageBoxButton.OK);
+                MessageBox.Show(MEmarket.Resources.AppResources.DownloadingPkgError + ex.Message, "(☆_@)", MessageBoxButton.OK);
                 progressIndicator.IsVisible = false;
                 SystemTray.SetProgressIndicator(this, null);
 
@@ -460,39 +588,54 @@ namespace MEmarket
             {
                 IsVisible = true,
                 IsIndeterminate = true,
-                Text = "Deploying " + fileName + ".."
+                Text = MEmarket.Resources.AppResources.InstallProgressTextInstalling + (_currentApp?.Name ?? MEmarket.Resources.AppResources.IdkLol) + "..."
             };
             SystemTray.SetProgressIndicator(this, progressIndicator);
 
             try
             {
-                var installer = new MEinstaller();
-                
-                installer.output = new Action<string>((message) =>
+                var installer = new MEmarket.Services.MEinstaller();
+
+                try
                 {
-                    System.Diagnostics.Debug.WriteLine("[MEinstaller Log] " + message);
+                    var properties = await packageFile.GetBasicPropertiesAsync();
+                    System.Diagnostics.Debug.WriteLine($"[Диагностика] Размер скачанного файла: {properties.Size} bytes");
+                }
+                catch (Exception sizeEx)
+                {
+                    System.Diagnostics.Debug.WriteLine("Не удалось узнать размер: " + sizeEx.Message);
+                }
 
-                    this.Dispatcher.BeginInvoke(() =>
-                    {
-                        if (message.Contains("Connecting"))
-                            progressIndicator.Text = "Connecting to telnet...";
-                        else if (message.Contains("Executing"))
-                            progressIndicator.Text = "Deploying " + fileName + "..";
-                        else if (message.Contains("Cleaning"))
-                            progressIndicator.Text = "Cleaning temp files...";
-                    });
-                });
+                // Логирование для обновления интерфейса
+                //installer.LogUpdated += (message) =>
+                //{
+                //    System.Diagnostics.Debug.WriteLine("[Installer Log] " + message);
 
-                installer.progress = new Action<bool>((isInstalling) =>
+                //    this.Dispatcher.BeginInvoke(() =>
+                //    {
+                //        if (message.Contains("Подключение"))
+                //            progressIndicator.Text = "Подключение к Telnet...";
+                //        else if (message.Contains("Выполнение"))
+                //            progressIndicator.Text = "Установка " + fileName + "...";
+                //        else if (message.Contains("очистка"))
+                //            progressIndicator.Text = "Очистка временных файлов...";
+                //        else
+                //            progressIndicator.Text = message;
+                //    });
+                //};
+
+                installer.ProgressStateChanged += (isInstalling) =>
                 {
                     this.Dispatcher.BeginInvoke(() =>
                     {
                         progressIndicator.IsIndeterminate = isInstalling;
                     });
-                });
-                
-                bool state = await installer.InstallApp(packageFile, InstallInSDCard: false);
-                
+                };
+
+                // Запуск последовательной установки (возвращает объект InstallResult)
+                var result = await installer.InstallAppAsync(packageFile, installToSdCard: false);
+
+                // Удаление временный файл пакета из папки приложения
                 try
                 {
                     await packageFile.DeleteAsync();
@@ -502,8 +645,9 @@ namespace MEmarket
                 progressIndicator.IsVisible = false;
                 SystemTray.SetProgressIndicator(this, null);
 
-                if (state)
+                if (result.IsSuccess)
                 {
+                    // Регистрирация в журнал установленных если скачивание успешное
                     try
                     {
                         var version = GetSelectedVersion();
@@ -530,19 +674,31 @@ namespace MEmarket
                     }
                     catch (Exception dbEx)
                     {
-                        System.Diagnostics.Debug.WriteLine("Ошибка записи в журнал: " + dbEx.Message);
+                        System.Diagnostics.Debug.WriteLine("Ошибка записи в журнал установленных: " + dbEx.Message);
                     }
 
-                    MessageBox.Show(fileName + " has been installed!", "MEmarket", MessageBoxButton.OK);
+                    MessageBox.Show((_currentApp?.Name ?? MEmarket.Resources.AppResources.IdkLol) + MEmarket.Resources.AppResources.AppInstallSuccessMessage, "( ˶ˆᗜˆ˵ )", MessageBoxButton.OK);
                 }
                 else
                 {
-                    MessageBox.Show("Installation failed. Check CMD Injector status.", "MEmarket", MessageBoxButton.OK);
+                    // Если произошла ошибка - подробный отчет и сообщение о сохраненном логе
+                    string errorCode = result.ErrorCode ?? MEmarket.Resources.AppResources.IdkLol;
+                    string errorDesc = result.ErrorDescription ?? MEmarket.Resources.AppResources.IdkLol;
+                    string appName = _currentApp?.Name ?? MEmarket.Resources.AppResources.IdkLol;
+
+                    string promptMsg = string.Format(
+                        MEmarket.Resources.AppResources.DeployingErrorMessageFormat,
+                        appName,
+                        errorCode,
+                        errorDesc
+                        );
+
+                    MessageBox.Show(promptMsg, "(╥_╥)", MessageBoxButton.OK);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error in InstallPackageAsync: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine("Исключение в InstallPackageAsync: " + ex.Message);
                 progressIndicator.IsVisible = false;
                 SystemTray.SetProgressIndicator(this, null);
             }
@@ -556,7 +712,7 @@ namespace MEmarket
                     }
                 }
             }
-        } */
+        }
 
         // ---
 
@@ -665,11 +821,102 @@ namespace MEmarket
             buttonSave.Click += SaveToDevice_Click;
             ApplicationBar.Buttons.Add(buttonSave);
 
-            //ApplicationBarIconButton buttonDownload = new ApplicationBarIconButton();
-            //buttonDownload.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
-            //buttonDownload.Text = MEmarket.Resources.AppResources.AppBarDownload;
-            //buttonDownload.Click += SaveToDevice_Click;
-            //ApplicationBar.Buttons.Add(buttonDownload);
+            ApplicationBarIconButton buttonDownload = new ApplicationBarIconButton();
+            buttonDownload.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
+            buttonDownload.Text = MEmarket.Resources.AppResources.AppBarDownload;
+            buttonDownload.Click += Install_Click;
+            ApplicationBar.Buttons.Add(buttonDownload);
+        }
+
+        private void Screenshot_Tap(object sender, System.Windows.Input.GestureEventArgs e)
+        {
+            var clickedImage = sender as Image;
+            if (clickedImage == null || clickedImage.Source == null) return;
+
+            _currentScreenshotIndex = ScreenshotsPanel.Children.IndexOf(clickedImage);
+
+            ImageViewerImage.Source = clickedImage.Source;
+
+            ImageViewerGrid.Visibility = Visibility.Visible;
+
+            SlideUpStoryboard.Begin();
+
+            if (ApplicationBar != null)
+            {
+                ApplicationBar.IsVisible = false;
+            }
+        }
+
+        private void ImageViewer_ManipulationCompleted(object sender, System.Windows.Input.ManipulationCompletedEventArgs e)
+        {
+            double swipeDistance = e.TotalManipulation.Translation.X;
+
+            if (swipeDistance < -50)
+            {
+                if (_currentScreenshotIndex < ScreenshotsPanel.Children.Count - 1)
+                {
+                    _currentScreenshotIndex++;
+                    ShowScreenshot(_currentScreenshotIndex);
+                }
+            }
+            else if (swipeDistance > 50)
+            {
+                if (_currentScreenshotIndex > 0)
+                {
+                    _currentScreenshotIndex--;
+                    ShowScreenshot(_currentScreenshotIndex);
+                }
+            }
+        }
+
+        private void ShowScreenshot(int index)
+        {
+            if (index >= 0 && index < ScreenshotsPanel.Children.Count)
+            {
+                var img = ScreenshotsPanel.Children[index] as Image;
+                if (img != null)
+                {
+                    FadeInStoryboard.Begin();
+                    ImageViewerImage.Source = img.Source;
+                }
+            }
+        }
+
+        //private void CloseImageViewer_Click(object sender, RoutedEventArgs e)
+        //{
+        //    CloseImageViewer();
+        //}
+
+        private void CloseImageViewer()
+        {
+            EventHandler completedHandler = null;
+            completedHandler = (s, args) =>
+            {
+                SlideDownStoryboard.Completed -= completedHandler;
+                ImageViewerGrid.Visibility = Visibility.Collapsed;
+                ImageViewerImage.Source = null;
+            };
+
+            SlideDownStoryboard.Completed += completedHandler;
+
+            SlideDownStoryboard.Begin();
+
+            if (ApplicationBar != null)
+            {
+                ApplicationBar.IsVisible = true;
+            }
+        }
+
+        protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
+        {
+            if (ImageViewerGrid != null && ImageViewerGrid.Visibility == Visibility.Visible)
+            {
+                CloseImageViewer();
+                e.Cancel = true;
+                return;
+            }
+
+            base.OnBackKeyPress(e);
         }
     }
 }

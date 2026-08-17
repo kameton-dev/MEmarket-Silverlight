@@ -16,6 +16,7 @@ using System.Net.Http;
 using System.Runtime.Serialization.Json;
 using System.Threading.Tasks;
 using System.IO.IsolatedStorage;
+using SocketEx;
 
 
 namespace MEmarket
@@ -114,6 +115,7 @@ namespace MEmarket
         // This code will not execute when the application is reactivated
         private void Application_Launching(object sender, LaunchingEventArgs e)
         {
+            CheckInjectionOnStartup();
         }
 
         // Code to execute when the application is activated (brought to foreground)
@@ -435,6 +437,48 @@ namespace MEmarket
                     progressIndicator.IsVisible = false;
                     SystemTray.SetProgressIndicator(currentPage, null);
                 }
+            }
+        }
+
+        // 1. Асинхронный метод проверки доступности локального Telnet-порта
+        private static async Task<bool> CheckInjectionActiveAsync()
+        {
+            try
+            {
+                using (var socket = new SocketEx.TcpClient())
+                {
+                    var connectTask = Task.Run(() => socket.Connect("127.0.0.1", 23)); // Или порт 9999
+                    var timeoutTask = Task.Delay(1500);
+
+                    var completedTask = await Task.WhenAny(connectTask, timeoutTask);
+
+                    if (completedTask == connectTask && socket.Connected)
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return false;
+        }
+
+        // 2. Метод инициализации проверки при запуске приложения
+        private async void CheckInjectionOnStartup()
+        {
+            bool isReady = await CheckInjectionActiveAsync();
+
+            if (!isReady)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    MessageBox.Show(
+                        MEmarket.Resources.AppResources.TelnetNotRunningMessage,
+                        MEmarket.Resources.AppResources.TelnetNotRunningTitle,
+                        MessageBoxButton.OK
+                    );
+                });
             }
         }
     }

@@ -38,12 +38,12 @@
         </toolkit:NavigationOutTransition>
     </toolkit:TransitionService.NavigationOutTransition>
 
-    <phone:PhoneApplicationPage.ApplicationBar>
+    <!--<phone:PhoneApplicationPage.ApplicationBar>
         <shell:ApplicationBar>
             <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/save.png" IsEnabled="True" Text="сохранить" Click="SaveToDevice_Click"/>
-            <!-- <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/download.png" IsEnabled="True" Text="установить" Click="Install_Click"/> -->
+             <shell:ApplicationBarIconButton IconUri="/Assets/AppBar/download.png" IsEnabled="True" Text="установить" Click="Install_Click"/> 
         </shell:ApplicationBar>
-    </phone:PhoneApplicationPage.ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>-->
 
     <Grid x:Name="LayoutRoot" Background="Transparent">
         <phone:Pivot x:Name="AppPivot" Title="ПРИЛОЖЕНИЕ">
@@ -70,6 +70,7 @@
                             <TextBlock x:Name="SummaryText" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" />
 
                             <RichTextBox x:Name="DescriptionText" IsReadOnly="True" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="-12,0" Padding="0"/>
+                            <!--<HyperlinkButton Content="Развернуть" Foreground="{StaticResource PhoneAccentBrush}" HorizontalAlignment="Left" />-->
 
                             <ScrollViewer x:Name="ScreenshotsScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,16" Visibility="Collapsed">
                                 <StackPanel x:Name="ScreenshotsPanel" Orientation="Horizontal"/>
@@ -93,12 +94,7 @@
                                 <TextBlock Text="{Binding LocalizedResources.VersionText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
                                 <TextBlock x:Name="AppVersionText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
                             </StackPanel>
-                            <toolkit:ListPicker x:Name="VersionComboBox" Header="" Visibility="Visible" Margin="0" SelectionChanged="VersionComboBox_SelectionChanged"/>
-
-                            <StackPanel Margin="12,0">
-                                <TextBlock Text="{Binding LocalizedResources.CapsText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
-                                <StackPanel x:Name="CapabilitiesPanel" Margin="0"/>
-                            </StackPanel>
+                            <toolkit:ListPicker x:Name="VersionComboBox" Visibility="Visible" Margin="0" SelectionChanged="VersionComboBox_SelectionChanged"/>
 
                             <StackPanel Orientation="Horizontal" Margin="12,0">
                                 <TextBlock Text="{Binding LocalizedResources.DevText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
@@ -106,8 +102,24 @@
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Margin="12,0">
+                                <TextBlock Text="{Binding LocalizedResources.CategoryText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock x:Name="CategoryText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding LocalizedResources.ExtraTextBlock, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP SemiLight" FontSize="32" Margin="12,24,12,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="12,0">
                                 <TextBlock Text="{Binding LocalizedResources.RepoText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
                                 <TextBlock x:Name="RepositoryText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="12,0">
+                                <TextBlock Text="{Binding LocalizedResources.AppTypeText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <TextBlock x:Name="AppTypeText" Text="lol" HorizontalAlignment="Left" VerticalAlignment="Top" FontFamily="Segoe WP" Margin="0"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="12,0">
+                                <TextBlock Text="{Binding LocalizedResources.CapsText, Source={StaticResource LocalizedStrings}}" Style="{StaticResource PhoneTextSubtleStyle}" HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="{StaticResource PhoneSubtleBrush}" FontFamily="Segoe WP" Margin="0" />
+                                <StackPanel x:Name="CapabilitiesPanel" Margin="0"/>
                             </StackPanel>
 
                             <!-- размер
@@ -123,6 +135,50 @@
                 </Grid>
             </phone:PivotItem>
         </phone:Pivot>
+
+        <Grid x:Name="ImageViewerGrid" Background="Black" Visibility="Collapsed" ManipulationCompleted="ImageViewer_ManipulationCompleted">
+            <Grid.Resources>
+                <Storyboard x:Name="SlideUpStoryboard">
+                    <DoubleAnimation 
+                        Storyboard.TargetName="ImageViewerTransform"
+                        Storyboard.TargetProperty="Y"
+                        From="800" To="0" 
+                        Duration="0:0:0.35">
+                        <DoubleAnimation.EasingFunction>
+                            <ExponentialEase EasingMode="EaseOut" Exponent="5"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                </Storyboard>
+                <Storyboard x:Name="SlideDownStoryboard">
+                    <DoubleAnimation 
+                        Storyboard.TargetName="ImageViewerTransform"
+                        Storyboard.TargetProperty="Y"
+                        From="0" To="800" 
+                        Duration="0:0:0.3">
+                        <DoubleAnimation.EasingFunction>
+                            <ExponentialEase EasingMode="EaseIn" Exponent="5"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                </Storyboard>
+                <Storyboard x:Name="FadeInStoryboard">
+                    <DoubleAnimation 
+                        Storyboard.TargetName="ImageViewerImage"
+                        Storyboard.TargetProperty="Opacity"
+                        From="0" To="1" 
+                        Duration="0:0:0.2"/>
+                </Storyboard>
+            </Grid.Resources>
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="ImageViewerTransform" Y="800"/>
+            </Grid.RenderTransform>
+            <Image x:Name="ImageViewerImage" 
+                   Stretch="Uniform" 
+                   HorizontalAlignment="Stretch" 
+                   VerticalAlignment="Stretch" />
+            <!--<Button Content="✕" HorizontalAlignment="Right" VerticalAlignment="Top" 
+                    Margin="0,12,12,0" Width="70" Height="70" Background="#66000000" 
+                    BorderThickness="0" Click="CloseImageViewer_Click"/>-->
+        </Grid>
     </Grid>
 
 </phone:PhoneApplicationPage>

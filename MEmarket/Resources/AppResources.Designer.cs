@@ -169,6 +169,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to  has been installed on your device!.
+        /// </summary>
+        public static string AppInstallSuccessMessage {
+            get {
+                return ResourceManager.GetString("AppInstallSuccessMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to my application.
         /// </summary>
         public static string ApplicationTitle {
@@ -201,6 +210,15 @@ namespace MEmarket.Resources {
         public static string AppsFilterToogleHeader {
             get {
                 return ResourceManager.GetString("AppsFilterToogleHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Application type: .
+        /// </summary>
+        public static string AppTypeText {
+            get {
+                return ResourceManager.GetString("AppTypeText", resourceCulture);
             }
         }
         
@@ -367,6 +385,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Category: .
+        /// </summary>
+        public static string CategoryText {
+            get {
+                return ResourceManager.GetString("CategoryText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to tools.
         /// </summary>
         public static string CategoryTools {
@@ -390,6 +417,21 @@ namespace MEmarket.Resources {
         public static string CreatorText {
             get {
                 return ResourceManager.GetString("CreatorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error installing application {0}.
+        ///
+        ///Error code: {1}
+        ///Description: {2}
+        ///
+        ///Detailed installer logs are located here:
+        ///C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt.
+        /// </summary>
+        public static string DeployingErrorMessageFormat {
+            get {
+                return ResourceManager.GetString("DeployingErrorMessageFormat", resourceCulture);
             }
         }
         
@@ -430,11 +472,29 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Extra.
+        /// </summary>
+        public static string ExtraTextBlock {
+            get {
+                return ResourceManager.GetString("ExtraTextBlock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Could not find the filename for this version in the repository manifest..
         /// </summary>
         public static string FindingPkgNameError {
             get {
                 return ResourceManager.GetString("FindingPkgNameError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to idk lol.
+        /// </summary>
+        public static string IdkLol {
+            get {
+                return ResourceManager.GetString("IdkLol", resourceCulture);
             }
         }
         
@@ -471,6 +531,24 @@ namespace MEmarket.Resources {
         public static string InstalledPivotHeader {
             get {
                 return ResourceManager.GetString("InstalledPivotHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Downloading .
+        /// </summary>
+        public static string InstallProgressTextDownloading {
+            get {
+                return ResourceManager.GetString("InstallProgressTextDownloading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploying .
+        /// </summary>
+        public static string InstallProgressTextInstalling {
+            get {
+                return ResourceManager.GetString("InstallProgressTextInstalling", resourceCulture);
             }
         }
         
@@ -516,6 +594,15 @@ namespace MEmarket.Resources {
         public static string LiveTileUpdsDesc {
             get {
                 return ResourceManager.GetString("LiveTileUpdsDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loading....
+        /// </summary>
+        public static string LoadingText {
+            get {
+                return ResourceManager.GetString("LoadingText", resourceCulture);
             }
         }
         
@@ -655,6 +742,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error while saving file: .
+        /// </summary>
+        public static string SavingPkgError {
+            get {
+                return ResourceManager.GetString("SavingPkgError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to start typing here.
         /// </summary>
         public static string SearchBoxPlaceholder {
@@ -687,6 +783,35 @@ namespace MEmarket.Resources {
         public static string StartDownloadingError {
             get {
                 return ResourceManager.GetString("StartDownloadingError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warning: The local Telnet server is not running.
+        ///
+        ///Ensure that you CMD-Injected your phone. Without this, application installation will not work..
+        /// </summary>
+        public static string TelnetNotRunningMessage {
+            get {
+                return ResourceManager.GetString("TelnetNotRunningMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Oops! O﹏o.
+        /// </summary>
+        public static string TelnetNotRunningTitle {
+            get {
+                return ResourceManager.GetString("TelnetNotRunningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update available.
+        /// </summary>
+        public static string UpdAvailableText {
+            get {
+                return ResourceManager.GetString("UpdAvailableText", resourceCulture);
             }
         }
         

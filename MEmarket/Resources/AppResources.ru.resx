@@ -341,4 +341,51 @@
   <data name="WarningText" xml:space="preserve">
     <value>Данный клиент MEmarket находится на этапе разработки. Возможны баги, зависания и ошибки</value>
   </data>
+  <data name="AppTypeText" xml:space="preserve">
+    <value>Тип приложения: </value>
+  </data>
+  <data name="CategoryText" xml:space="preserve">
+    <value>Категория: </value>
+  </data>
+  <data name="ExtraTextBlock" xml:space="preserve">
+    <value>Дополнительно</value>
+  </data>
+  <data name="AppInstallSuccessMessage" xml:space="preserve">
+    <value> установлено на ваше устройство!</value>
+  </data>
+  <data name="DeployingErrorMessageFormat" xml:space="preserve">
+    <value>Ошибка установки приложения {0}.
+
+Код ошибки: {1}
+Описание: {2}
+
+Подробные логи установщика здесь:
+C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
+  </data>
+  <data name="IdkLol" xml:space="preserve">
+    <value>я хз лол</value>
+  </data>
+  <data name="InstallProgressTextDownloading" xml:space="preserve">
+    <value>Скачивание </value>
+  </data>
+  <data name="InstallProgressTextInstalling" xml:space="preserve">
+    <value>Развертывание </value>
+  </data>
+  <data name="LoadingText" xml:space="preserve">
+    <value>Загрузка...</value>
+  </data>
+  <data name="SavingPkgError" xml:space="preserve">
+    <value>Ошибка при сохранении файла: </value>
+  </data>
+  <data name="TelnetNotRunningMessage" xml:space="preserve">
+    <value>Внимание: Локальный Telnet-сервер не запущен.
+
+Убедитесь, что в приложении CMD Injector выполнена инжекция. Без этого установка приложений работать не будет.</value>
+  </data>
+  <data name="TelnetNotRunningTitle" xml:space="preserve">
+    <value>Упс! O﹏o</value>
+  </data>
+  <data name="UpdAvailableText" xml:space="preserve">
+    <value>Доступно обновление</value>
+  </data>
 </root>

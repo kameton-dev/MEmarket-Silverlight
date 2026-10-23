@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,12 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Windows.Storage;
-using Windows.Storage.Streams;
 using ICSharpCode.SharpZipLib.Zip;
 
 namespace MEmarket.Services
 {
-    // Класс для возврата детального результата установки
     public class InstallResult
     {
         public bool IsSuccess { get; set; }
@@ -23,476 +22,387 @@ namespace MEmarket.Services
 
     public class MEinstaller
     {
+        private const string PublicDir = @"C:\Data\Users\Public\Documents";
+        private const string ProgramsDir = @"C:\Data\Programs";
+        private const string PublicErrorLogPath = PublicDir + @"\MEmarket_Error_Log.txt";
+        private const string TelnetHost = "127.0.0.1";
+        private const int TelnetPort = 23;
+        private const int StepTimeoutSeconds = 60;
+        private const string SuccessMarker = "Completed Successfully.";
+
         private StorageFolder _localDataFolder;
         private CancellationTokenSource _cts;
-        private TelnetClient _telnet;
-        private StringBuilder _sessionLog = new StringBuilder();
+        private readonly StringBuilder _sessionLog = new StringBuilder();
+        private int _busy;
 
-        // Вспомогательный класс для хранения информации об извлеченном пакете
         private class AppxInfo
         {
             public StorageFile File { get; set; }
             public string ProductId { get; set; }
         }
 
-        // События для вывода логов в UI
+        /// <summary>
+        /// Внимание: события вызываются из фоновых потоков (в т.ч. из потока чтения telnet).
+        /// Подписчик должен сам переключаться на UI-поток.
+        /// </summary>
         public event Action<string> LogUpdated;
         public event Action<bool> ProgressStateChanged;
 
-        // Вспомогательный метод для логгирования
-        private void WriteLog(string message)
-        {
-            _sessionLog.AppendLine($"[{DateTime.Now:HH:mm:ss}] {message}");
-            LogUpdated?.Invoke(message);
-        }
+        // ------------------------------------------------------------------
+        // Публичный API
+        // ------------------------------------------------------------------
 
-        public async Task<InstallResult> InstallAppAsync(StorageFile xapFile, bool installToSdCard = false)
+        public async Task<InstallResult> InstallAppAsync(StorageFile packageFile, bool installToSdCard = false, bool uninstallFirst = true)
         {
+            if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
+            {
+                return new InstallResult { IsSuccess = false, ErrorDescription = "Установка уже выполняется." };
+            }
+
             ProgressStateChanged?.Invoke(true);
-            _cts = new CancellationTokenSource();
-            _sessionLog.Clear();
 
-            var finalResult = new InstallResult { IsSuccess = false };
+            var cts = new CancellationTokenSource();
+            _cts = cts;
+            lock (_sessionLog) { _sessionLog.Clear(); }
 
-            // Уникальные маркеры для каждого шага
-            string baseName = Path.GetFileNameWithoutExtension(xapFile.Name);
-            string confirmFileName1 = baseName + "Confirm1.txt";
-            string confirmFileName2 = baseName + "Confirm2.txt";
-            string outputFileName = baseName + "Output.txt";
-            string batFileName1 = baseName + "Attempt1.bat";
-            string batFileName2 = baseName + "Attempt2.bat";
-            string localLogName = "MEinstaller_Error_Log.txt";
-            string tempExtractedAppxName = "temp_extracted_package.appx";
-
-            string confirmFilePath1 = "";
-            string confirmFilePath2 = "";
-            string outputFilePath = "";
-            string batFilePath1 = "";
-            string batFilePath2 = "";
+            var result = new InstallResult { IsSuccess = false };
+            var tempLocalFiles = new List<string>(); // имена файлов в _localDataFolder
+            TelnetClient telnet = null;
+            string id = Guid.NewGuid().ToString("N").Substring(0, 8);
 
             try
             {
-                // Шаг 1: подготовка папок приложения
                 if (_localDataFolder == null)
                 {
                     _localDataFolder = await ApplicationData.Current.LocalFolder.CreateFolderAsync(
                         "XapInstallersTemp",
-                        CreationCollisionOption.OpenIfExists
-                    );
+                        CreationCollisionOption.OpenIfExists);
                 }
 
-                confirmFilePath1 = Path.Combine(_localDataFolder.Path, confirmFileName1);
-                confirmFilePath2 = Path.Combine(_localDataFolder.Path, confirmFileName2);
-                outputFilePath = Path.Combine(_localDataFolder.Path, outputFileName);
-                batFilePath1 = Path.Combine(_localDataFolder.Path, batFileName1);
-                batFilePath2 = Path.Combine(_localDataFolder.Path, batFileName2);
-
-                string fileExtension = Path.GetExtension(xapFile.Name).ToLower();
-                if (string.IsNullOrEmpty(fileExtension)) fileExtension = ".xap";
-
-                string publicXapPath = $@"C:\Data\Users\Public\Documents\temp_install{fileExtension}";
-                string deployParam = installToSdCard ? "-dis" : "-di";
-
-                // Подключение к локальному Telnet-серверу
-                _telnet = new TelnetClient(TimeSpan.FromSeconds(3), _cts.Token);
-                _telnet.MessageReceived += (s, msg) => _sessionLog.AppendLine($"[Telnet] {msg}");
-                _telnet.MessageReceived += (s, msg) => LogUpdated?.Invoke($"[Telnet] {msg}");
-                _telnet.ErrorReceived += (s, err) => _sessionLog.AppendLine($"[Telnet Ошибка] {err}");
-                _telnet.ErrorReceived += (s, err) => LogUpdated?.Invoke($"[Telnet Ошибка] {err}");
-
-                WriteLog("Подключение к локальному Telnet-серверу...");
-                _telnet.Connect("127.0.0.1", 23);
-                await Task.Delay(1000);
-
-                bool isInstalled = false;
-
-                // ==========================================
-                // ЭТАП 1: Метод "None" (Стандартный деплой -di / -dis)
-                // ==========================================
-                WriteLog("Попытка 1: Запуск стандартной установки (None)...");
-
-                string batContent1 = $"copy \"{xapFile.Path}\" \"{publicXapPath}\"\r\n" +
-                                     $"th \"{publicXapPath}\" -u\r\n" +
-                                     "sleep 3\r\n" +
-                                     $"th \"{publicXapPath}\" {deployParam} > \"{outputFilePath}\"\r\n" +
-                                     $"del /f /q /a \"C:\\Data\\Users\\Public\\Documents\\temp_install.*\"\r\n" +
-                                     "if %errorlevel% equ 0 (\r\n" +
-                                     $"  echo Done > \"{confirmFilePath1}\"\r\n" +
-                                     ") else (\r\n" +
-                                     $"  echo Failed %errorlevel% > \"{confirmFilePath1}\"\r\n" +
-                                     ")\r\n";
-
-                StorageFile batFile1 = await _localDataFolder.CreateFileAsync(batFileName1, CreationCollisionOption.ReplaceExisting);
-                byte[] batBytes1 = new UTF8Encoding(false).GetBytes(batContent1);
-                await FileIO.WriteBytesAsync(batFile1, batBytes1);
-
-                // Запуск первой попытки
-                await Task.Run(() => _telnet.Send($"call \"{batFilePath1}\""));
-
-                // Ожидание выполнения первого батника
-                int elapsed = 0;
-                while (elapsed < 60)
-                {
-                    if (File.Exists(confirmFilePath1))
-                    {
-                        string status = "";
-                        using (var fs = new FileStream(confirmFilePath1, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                        using (var reader = new StreamReader(fs, Encoding.UTF8))
-                        {
-                            status = reader.ReadToEnd().Trim();
-                        }
-
-                        if (status.StartsWith("Done"))
-                        {
-                            isInstalled = true;
-                        }
-                        break;
-                    }
-                    await Task.Delay(1000);
-                    elapsed++;
-                }
-
-                // Чтение лога первого этапа
-                string attempt1Log = "";
-                try
-                {
-                    StorageFile outputFile = await _localDataFolder.GetFileAsync(outputFileName);
-                    attempt1Log = await FileIO.ReadTextAsync(outputFile);
-                }
-                catch { }
-
-                if (isInstalled && attempt1Log.Contains("Completed Successfully."))
-                {
-                    WriteLog("Попытка 1 успешна! Приложение установлено.");
-                    finalResult.IsSuccess = true;
-                }
-                else
-                {
-                    WriteLog("Стандартный метод завершился с ошибкой (или таймаутом).");
-                    isInstalled = false;
-
-                    // ==========================================
-                    // ЭТАП 2: Метод "Deployment Mode" (Обход подписи, вернее ее попытка)
-                    // TODO: Прошерстить инфу есть ли возможность устанавливать подписанные прил-я
-                    // ==========================================
-                    if (fileExtension == ".appx" || fileExtension == ".appxbundle")
-                    {
-                        WriteLog("Попытка 2: Запуск обхода подписи (Deployment Mode)...");
-                        string productId = "";
-
-                        // Если это бандл, сначала извлекаем из него совместимый .appx
-                        if (fileExtension == ".appxbundle")
-                        {
-                            WriteLog("Обнаружен .appxbundle. Извлечение совместимого .appx пакета...");
-                            var bundleInfo = await ExtractAppxFromBundleAsync(xapFile);
-
-                            if (bundleInfo != null)
-                            {
-                                WriteLog("Совместимый пакет .appx успешно извлечен из бандла.");
-                                xapFile = bundleInfo.File;
-                                productId = bundleInfo.ProductId;
-                                publicXapPath = $@"C:\Data\Users\Public\Documents\temp_install.appx";
-                            }
-                            else
-                            {
-                                WriteLog("[Ошибка] Не удалось найти совместимый .appx пакет внутри бандла.");
-                            }
-                        }
-                        else
-                        {
-                            WriteLog("Анализ манифеста APPX...");
-                            productId = await GetPhoneProductIdAsync(xapFile);
-                        }
-
-                        if (!string.IsNullOrEmpty(productId))
-                        {
-                            WriteLog($"Найден ProductID приложения: {{{productId}}}");
-                            string targetProgramPath = $@"C:\Data\Programs\{{{productId}}}";
-
-                            string batContent2 = $"TH.exe \"{publicXapPath}\" -e \"{targetProgramPath}\"\r\n" +
-                                                 "sleep 2\r\n" +
-                                                 $"del /f /q /a \"{targetProgramPath}\\AppxSignature.p7x\"\r\n" +
-                                                 $"del /f /q /a \"{targetProgramPath}\\AppxMetadata\\AppxSignature.p7x\"\r\n" +
-                                                 "sleep 1\r\n" +
-                                                 $"TH.exe \"{targetProgramPath}\\AppxManifest.xml\" -de > \"{outputFilePath}\"\r\n" +
-                                                 $"del /f /q /a \"C:\\Data\\Users\\Public\\Documents\\temp_install.*\"\r\n" +
-                                                 "if %errorlevel% equ 0 (\r\n" +
-                                                 $"  echo Done > \"{confirmFilePath2}\"\r\n" +
-                                                 ") else (\r\n" +
-                                                 $"  echo Failed %errorlevel% > \"{confirmFilePath2}\"\r\n" +
-                                                 ")\r\n";
-
-                            StorageFile batFile2 = await _localDataFolder.CreateFileAsync(batFileName2, CreationCollisionOption.ReplaceExisting);
-                            byte[] batBytes2 = new UTF8Encoding(false).GetBytes(batContent2);
-                            await FileIO.WriteBytesAsync(batFile2, batBytes2);
-
-                            // Запуск второй попытки
-                            await Task.Run(() => _telnet.Send($"call \"{batFilePath2}\""));
-
-                            // Ожидание выполнения второго батника
-                            elapsed = 0;
-                            while (elapsed < 60)
-                            {
-                                if (File.Exists(confirmFilePath2))
-                                {
-                                    string status = "";
-                                    using (var fs = new FileStream(confirmFilePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                                    using (var reader = new StreamReader(fs, Encoding.UTF8))
-                                    {
-                                        status = reader.ReadToEnd().Trim();
-                                    }
-
-                                    if (status.StartsWith("Done"))
-                                    {
-                                        isInstalled = true;
-                                    }
-                                    break;
-                                }
-                                await Task.Delay(1000);
-                                elapsed++;
-                            }
-
-                            // Читаем лог второго этапа
-                            string attempt2Log = "";
-                            try
-                            {
-                                StorageFile outputFile = await _localDataFolder.GetFileAsync(outputFileName);
-                                attempt2Log = await FileIO.ReadTextAsync(outputFile);
-                            }
-                            catch { }
-
-                            if (isInstalled && attempt2Log.Contains("Completed Successfully."))
-                            {
-                                WriteLog("Попытка 2 успешна! Приложение установлено через Deployment Mode.");
-                                finalResult.IsSuccess = true;
-                            }
-                            else
-                            {
-                                WriteLog("Попытка 2 также завершилась неудачей.");
-                                finalResult.IsSuccess = false;
-                            }
-                        }
-                        else
-                        {
-                            WriteLog("Не удалось получить ProductID. Обход подписи невозможен.");
-                        }
-                    }
-                    else
-                    {
-                        WriteLog("Обход подписи (Deployment Mode) доступен только для пакетов .appx и .appxbundle.");
-                    }
-                }
-
-                // Чтение лога ошибок и его парс ДО ОЧИСТКИ ФАЙЛОВ
-                string finalLogText = "";
-                try
-                {
-                    StorageFile outputFile = await _localDataFolder.GetFileAsync(outputFileName);
-                    if (outputFile != null)
-                    {
-                        finalLogText = await FileIO.ReadTextAsync(outputFile);
-                        ParseErrorLog(finalLogText, finalResult);
-                    }
-                }
-                catch { }
-
-                // Чистый от лишнего лог отладки (т. е. строки только установщика)
-                finalResult.CleanLog = CleanLogLines(_sessionLog.ToString() + "\r\n" + finalLogText);
-
-                // Очистка и завершение
-                if (finalResult.IsSuccess)
-                {
-                    WriteLog("Установка завершена успешно.");
-                    await Task.Run(() => _telnet.Send($"del \"{publicXapPath}\""));
-                }
-                else
-                {
-                    WriteLog("Установка не удалась.");
-
-                    // ОБХОД ПЕСОЧНИЦЫ:
-                    try
-                    {
-                        // 1. Запись лога в папку приложения
-                        string localLogPath = Path.Combine(_localDataFolder.Path, localLogName);
-                        using (var fs = new FileStream(localLogPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                        using (var writer = new StreamWriter(fs, new UTF8Encoding(false)))
-                        {
-                            writer.Write(finalResult.CleanLog);
-                        }
-
-                        // 2. Копирование логов из песочницы в общую папку Documents с помощью telnet
-                        string publicLogPath = @"C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt";
-                        await Task.Run(() => _telnet.Send($"copy \"{localLogPath}\" \"{publicLogPath}\""));
-
-                        WriteLog("Лог ошибок сохранен на телефон.");
-                    }
-                    catch (Exception ex)
-                    {
-                        WriteLog("Ошибка экспорта лога: " + ex.Message);
-                    }
-                    //try
-                    //{
-                    //    await Task.Run(() => _telnet.Send(@"del /f /q /a ""C:\Data\Users\Public\Documents\temp_install.*"""));
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    WriteLog("Ошибка финальной очистки папки документов: " + ex.Message);
-                    //}
-                }
-
-                // Очистка файлов сценария в песочнице
-                await SafeDeleteFileAsync(confirmFileName1);
-                await SafeDeleteFileAsync(confirmFileName2);
-                await SafeDeleteFileAsync(batFileName1);
-                await SafeDeleteFileAsync(batFileName2);
-                await SafeDeleteFileAsync(outputFileName);
-                await SafeDeleteFileAsync(localLogName);
-                await SafeDeleteFileAsync(tempExtractedAppxName);
-
-                return finalResult;
+                telnet = CreateTelnet(cts.Token);
+                await RunInstallAsync(packageFile, installToSdCard, uninstallFirst, id, telnet, tempLocalFiles, result, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                WriteLog("Установка отменена.");
+                result.IsSuccess = false;
+                result.ErrorDescription = "Установка отменена.";
+                result.CleanLog = BuildCleanLog(null);
             }
             catch (Exception ex)
             {
                 WriteLog("Произошел сбой: " + ex.Message);
-                finalResult.IsSuccess = false;
-                finalResult.ErrorDescription = ex.Message;
-                finalResult.CleanLog = CleanLogLines(_sessionLog.ToString());
-                return finalResult;
+                result.IsSuccess = false;
+                result.ErrorDescription = ex.Message;
+                result.CleanLog = BuildCleanLog(null);
             }
             finally
             {
-                _telnet?.Disconnect();
-                _telnet?.Dispose();
+                telnet?.Dispose();
+
+                foreach (string name in tempLocalFiles)
+                {
+                    await SafeDeleteFileAsync(name);
+                }
+
+                _cts = null;
+                cts.Dispose();
+                Interlocked.Exchange(ref _busy, 0);
                 ProgressStateChanged?.Invoke(false);
+            }
+
+            return result;
+        }
+
+        public void Cancel()
+        {
+            try { _cts?.Cancel(); }
+            catch (ObjectDisposedException) { }
+        }
+
+        // ------------------------------------------------------------------
+        // Основной сценарий
+        // ------------------------------------------------------------------
+
+        private async Task RunInstallAsync(
+            StorageFile package, bool installToSdCard, bool uninstallFirst,
+            string id, TelnetClient telnet, List<string> tempLocalFiles,
+            InstallResult result, CancellationToken ct)
+        {
+            string ext = Path.GetExtension(package.Name).ToLowerInvariant();
+            if (string.IsNullOrEmpty(ext)) ext = ".xap";
+            string deployParam = installToSdCard ? "-dis" : "-di";
+
+            var outputs = new StringBuilder(); // содержимое всех output-файлов для итогового лога
+            string failReason = null;
+            string lastDeployLog = "";
+
+            // 0. Копируем пакет в нашу папку под ASCII-именем (GUID).
+            //    Так в bat не попадают пользовательские имена (кириллица, %, & и т.п.)
+            WriteLog("Подготовка пакета...");
+            StorageFile staged = await package.CopyAsync(_localDataFolder, id + ext, NameCollisionOption.ReplaceExisting);
+            string stagedPath = TrackLocal(tempLocalFiles, staged.Name);
+
+            // 1. Telnet
+            WriteLog("Подключение к локальному Telnet-серверу...");
+            if (!await telnet.ConnectAsync(TelnetHost, TelnetPort))
+            {
+                result.IsSuccess = false;
+                result.ErrorDescription = "Не удалось подключиться к Telnet-серверу (" + TelnetHost + ":" + TelnetPort + "). Проверьте, что он включён.";
+                result.CleanLog = BuildCleanLog(null);
+                return;
+            }
+            await Task.Delay(1000, ct);
+
+            // ==============================================================
+            // ПОПЫТКА 1: стандартный деплой (-di / -dis)
+            // ==============================================================
+            WriteLog("Попытка 1: стандартная установка...");
+
+            string pub1 = $@"{PublicDir}\mei_{id}{ext}";
+            string bat1 = TrackLocal(tempLocalFiles, id + "_1.bat");
+            string ok1 = TrackLocal(tempLocalFiles, id + "_1.ok");
+            string out1u = TrackLocal(tempLocalFiles, id + "_1u.txt");
+            string out1 = TrackLocal(tempLocalFiles, id + "_1.txt");
+
+            var script1 = new List<string>();
+            script1.Add($"copy {Q(stagedPath)} {Q(pub1)}");
+            if (uninstallFirst)
+            {
+                // Вывод удаления - в отдельный файл, чтобы его "Completed Successfully."
+                // не принять за успех установки.
+                script1.Add($"TH.exe {Q(pub1)} -u > {Q(out1u)} 2>&1");
+                script1.Add("sleep 3");
+            }
+            script1.Add($"TH.exe {Q(pub1)} {deployParam} > {Q(out1)} 2>&1");
+            script1.Add("set RC=%errorlevel%");               // сохраняем код СРАЗУ после TH
+            script1.Add($"del /f /q /a {Q(pub1)}");
+            script1.AddRange(ConfirmLines(ok1));
+
+            string status1 = await RunScriptAsync(telnet, bat1, script1, ok1, ct);
+            string log1 = ReadTextShared(out1);
+            AppendOutput(outputs, "Attempt 1: uninstall", ReadTextShared(out1u));
+            AppendOutput(outputs, "Attempt 1: deploy", log1);
+            lastDeployLog = log1;
+
+            if (IsStepSuccess(status1, log1))
+            {
+                WriteLog("Попытка 1 успешна! Приложение установлено.");
+                result.IsSuccess = true;
+            }
+            else
+            {
+                failReason = DescribeFailure(status1);
+                WriteLog("Стандартный метод завершился с ошибкой: " + failReason);
+            }
+
+            // ==============================================================
+            // ПОПЫТКА 2: распаковка + удаление подписи + деплой манифеста
+            // ==============================================================
+            if (!result.IsSuccess)
+            {
+                if (ext == ".appx" || ext == ".appxbundle")
+                {
+                    WriteLog("Попытка 2: установка без подписи (Deployment Mode)...");
+
+                    string appxPath = null;
+                    string productId = null;
+
+                    if (ext == ".appxbundle")
+                    {
+                        WriteLog("Обнаружен .appxbundle. Извлечение совместимого .appx пакета...");
+                        AppxInfo info = await ExtractAppxFromBundleAsync(stagedPath, id, tempLocalFiles);
+                        if (info != null)
+                        {
+                            WriteLog("Совместимый пакет .appx успешно извлечен из бандла.");
+                            appxPath = info.File.Path;
+                            productId = info.ProductId;
+                        }
+                        else
+                        {
+                            WriteLog("[Ошибка] Не удалось найти совместимый .appx пакет внутри бандла.");
+                        }
+                    }
+                    else
+                    {
+                        WriteLog("Анализ манифеста APPX...");
+                        appxPath = stagedPath;
+                        productId = ReadProductIdFromAppx(stagedPath, false);
+                    }
+
+                    if (!string.IsNullOrEmpty(productId))
+                    {
+                        WriteLog($"Найден ProductID приложения: {{{productId}}}");
+
+                        string target = $@"{ProgramsDir}\{{{productId}}}";
+                        string pub2 = $@"{PublicDir}\mei_{id}_2.appx";
+                        string bat2 = TrackLocal(tempLocalFiles, id + "_2.bat");
+                        string ok2 = TrackLocal(tempLocalFiles, id + "_2.ok");
+                        string out2pre = TrackLocal(tempLocalFiles, id + "_2pre.txt");
+                        string out2 = TrackLocal(tempLocalFiles, id + "_2.txt");
+
+                        var script2 = new List<string>();
+                        // ВАЖНО: файл копируется заново. В старой версии он удалялся в конце
+                        // первой попытки, и TH.exe -e получал несуществующий путь.
+                        script2.Add($"copy {Q(appxPath)} {Q(pub2)}");
+                        script2.Add($"TH.exe {Q(pub2)} -e {Q(target)} > {Q(out2pre)} 2>&1");
+                        script2.Add("sleep 2");
+                        // Листинг папки: по нему видно, что реально распаковалось
+                        script2.Add($"dir {Q(target)} >> {Q(out2pre)} 2>&1");
+                        script2.Add($"del /f /q /a {Q(target + @"\AppxSignature.p7x")} >> {Q(out2pre)} 2>&1");
+                        script2.Add($"del /f /q /a {Q(target + @"\AppxMetadata\AppxSignature.p7x")} >> {Q(out2pre)} 2>&1");
+                        script2.Add("sleep 1");
+                        script2.Add($"TH.exe {Q(target + @"\AppxManifest.xml")} -de > {Q(out2)} 2>&1");
+                        script2.Add("set RC=%errorlevel%");
+                        script2.Add($"del /f /q /a {Q(pub2)}");
+                        script2.AddRange(ConfirmLines(ok2));
+
+                        string status2 = await RunScriptAsync(telnet, bat2, script2, ok2, ct);
+                        string log2 = ReadTextShared(out2);
+                        AppendOutput(outputs, "Attempt 2: extract + signature removal", ReadTextShared(out2pre));
+                        AppendOutput(outputs, "Attempt 2: deploy manifest", log2);
+                        lastDeployLog = log2;
+
+                        if (IsStepSuccess(status2, log2))
+                        {
+                            WriteLog("Попытка 2 успешна! Приложение установлено через Deployment Mode.");
+                            result.IsSuccess = true;
+                        }
+                        else
+                        {
+                            failReason = DescribeFailure(status2);
+                            WriteLog("Попытка 2 также завершилась неудачей: " + failReason);
+                        }
+                    }
+                    else
+                    {
+                        failReason = "Не удалось получить ProductID. Обход подписи невозможен.";
+                        WriteLog(failReason);
+                    }
+                }
+                else
+                {
+                    WriteLog("Deployment Mode доступен только для пакетов .appx и .appxbundle.");
+                }
+            }
+
+            // ==============================================================
+            // Итог
+            // ==============================================================
+            if (!result.IsSuccess)
+            {
+                ParseErrorLog(lastDeployLog, result);
+                if (string.IsNullOrEmpty(result.ErrorDescription))
+                {
+                    result.ErrorDescription = failReason ?? "Установка не удалась.";
+                }
+            }
+
+            WriteLog(result.IsSuccess ? "Установка завершена успешно." : "Установка не удалась.");
+            result.CleanLog = BuildCleanLog(outputs.ToString());
+
+            if (!result.IsSuccess)
+            {
+                await ExportErrorLogAsync(telnet, id, tempLocalFiles, result.CleanLog);
             }
         }
 
-        // Асинхронный метод парсинга AppxManifest.xml
-        private async Task<string> GetPhoneProductIdAsync(StorageFile appxFile)
-        {
-            ZipFile file = null;
-            try
-            {
-                FileStream fs = File.OpenRead(appxFile.Path);
-                file = new ZipFile(fs);
+        // ------------------------------------------------------------------
+        // Выполнение bat через telnet и ожидание подтверждения
+        // ------------------------------------------------------------------
 
-                foreach (ZipEntry zipEntry in file)
-                {
-                    if (zipEntry.Name.ToLower() == "appxmanifest.xml")
-                    {
-                        using (Stream zipStream = file.GetInputStream(zipEntry))
-                        using (StreamReader reader = new StreamReader(zipStream))
-                        {
-                            string xmlContent = await reader.ReadToEndAsync();
-                            return ParseProductIdFromXml(xmlContent);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
+        private async Task<string> RunScriptAsync(TelnetClient telnet, string batPath, List<string> lines, string confirmPath, CancellationToken ct)
+        {
+            string script = string.Join("\r\n", lines) + "\r\n";
+
+            StorageFile batFile = await _localDataFolder.CreateFileAsync(Path.GetFileName(batPath), CreationCollisionOption.ReplaceExisting);
+            await FileIO.WriteBytesAsync(batFile, new UTF8Encoding(false).GetBytes(script));
+
+            if (!await telnet.SendAsync($"call {Q(batPath)}"))
             {
-                System.Diagnostics.Debug.WriteLine("[Ошибка парсинга AppxManifest.xml] " + ex.Message);
+                return "Failed: не удалось отправить команду через Telnet";
             }
-            finally
+
+            return await WaitForConfirmAsync(confirmPath, ct);
+        }
+
+        /// <summary>Возвращает текст статуса или null при таймауте.</summary>
+        private static async Task<string> WaitForConfirmAsync(string path, CancellationToken ct)
+        {
+            for (int elapsed = 0; elapsed < StepTimeoutSeconds; elapsed++)
             {
-                if (file != null)
+                ct.ThrowIfCancellationRequested();
+
+                if (File.Exists(path))
                 {
-                    file.IsStreamOwner = true;
-                    file.Close();
+                    string status = ReadTextShared(path);
+                    // Файл мог быть уже создан, но ещё пуст - ждём содержимое.
+                    if (!string.IsNullOrWhiteSpace(status)) return status;
                 }
+
+                await Task.Delay(1000, ct);
             }
             return null;
         }
 
-        // Метод распаковки и извлечения совместимого .appx пакета из .appxbundle
-        private async Task<AppxInfo> ExtractAppxFromBundleAsync(StorageFile bundleFile)
+        private static List<string> ConfirmLines(string confirmPath)
+        {
+            return new List<string>
+            {
+                "if %RC% equ 0 (",
+                $"  echo Done > {Q(confirmPath)}",
+                ") else (",
+                $"  echo Failed %RC% > {Q(confirmPath)}",
+                ")"
+            };
+        }
+
+        private static bool IsStepSuccess(string status, string deployLog)
+        {
+            return status != null
+                && status.StartsWith("Done")
+                && deployLog.Contains(SuccessMarker);
+        }
+
+        private static string DescribeFailure(string status)
+        {
+            return status == null
+                ? $"таймаут ({StepTimeoutSeconds} с)"
+                : status;
+        }
+
+        // ------------------------------------------------------------------
+        // APPX / APPXBUNDLE
+        // ------------------------------------------------------------------
+
+        private async Task<AppxInfo> ExtractAppxFromBundleAsync(string bundlePath, string id, List<string> tempLocalFiles)
         {
             ZipFile bundleZip = null;
             try
             {
-                FileStream fs = File.OpenRead(bundleFile.Path);
-                bundleZip = new ZipFile(fs);
+                bundleZip = OpenZip(bundlePath);
 
-                foreach (ZipEntry bundleEntry in bundleZip)
+                foreach (string entryName in GetCandidateAppxEntries(bundleZip))
                 {
-                    if (bundleEntry.Name.ToLower().EndsWith(".appx"))
+                    ZipEntry entry = bundleZip.GetEntry(entryName);
+                    if (entry == null) continue;
+
+                    string tempName = id + "_extracted.appx";
+                    StorageFile temp = await _localDataFolder.CreateFileAsync(tempName, CreationCollisionOption.ReplaceExisting);
+                    if (!tempLocalFiles.Contains(tempName)) tempLocalFiles.Add(tempName);
+
+                    using (Stream src = bundleZip.GetInputStream(entry))
+                    using (Stream dst = await temp.OpenStreamForWriteAsync())
                     {
-                        using (Stream appxStream = bundleZip.GetInputStream(bundleEntry))
-                        {
-                            string tempAppxName = "temp_extracted_package.appx";
-                            StorageFile tempAppxFile = await _localDataFolder.CreateFileAsync(tempAppxName, CreationCollisionOption.ReplaceExisting);
+                        dst.SetLength(0);
+                        await src.CopyToAsync(dst);
+                    }
 
-                            using (var outFs = await tempAppxFile.OpenStreamForWriteAsync())
-                            {
-                                outFs.SetLength(0);
-                                await appxStream.CopyToAsync(outFs);
-                            }
-
-                            ZipFile appxZip = null;
-                            bool isTargetAppx = false;
-                            string productId = null;
-
-                            try
-                            {
-                                FileStream appxFs = File.OpenRead(tempAppxFile.Path);
-                                appxZip = new ZipFile(appxFs);
-
-                                bool hasExe = false;
-                                bool hasManifest = false;
-
-                                foreach (ZipEntry appxEntry in appxZip)
-                                {
-                                    if (appxEntry.Name.ToLower().EndsWith(".exe"))
-                                    {
-                                        hasExe = true;
-                                    }
-                                    if (appxEntry.Name.ToLower() == "appxmanifest.xml")
-                                    {
-                                        hasManifest = true;
-                                    }
-                                }
-
-                                if (hasExe && hasManifest)
-                                {
-                                    isTargetAppx = true;
-                                    ZipEntry manifestEntry = appxZip.GetEntry("AppxManifest.xml");
-                                    if (manifestEntry != null)
-                                    {
-                                        using (Stream manifestStream = appxZip.GetInputStream(manifestEntry))
-                                        using (StreamReader reader = new StreamReader(manifestStream))
-                                        {
-                                            string xmlContent = reader.ReadToEnd();
-                                            productId = ParseProductIdFromXml(xmlContent);
-                                        }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine("Ошибка анализа вложенного appx: " + ex.Message);
-                            }
-                            finally
-                            {
-                                if (appxZip != null)
-                                {
-                                    appxZip.IsStreamOwner = true;
-                                    appxZip.Close();
-                                }
-                            }
-
-                            if (isTargetAppx && !string.IsNullOrEmpty(productId))
-                            {
-                                return new AppxInfo
-                                {
-                                    File = tempAppxFile,
-                                    ProductId = productId
-                                };
-                            }
-                            else
-                            {
-                                await tempAppxFile.DeleteAsync();
-                            }
-                        }
+                    // Нужен именно пакет приложения: с .exe и манифестом (ресурсные пакеты отсеиваются)
+                    string productId = ReadProductIdFromAppx(temp.Path, true);
+                    if (!string.IsNullOrEmpty(productId))
+                    {
+                        return new AppxInfo { File = temp, ProductId = productId };
                     }
                 }
             }
@@ -502,41 +412,120 @@ namespace MEmarket.Services
             }
             finally
             {
-                if (bundleZip != null)
-                {
-                    bundleZip.IsStreamOwner = true;
-                    bundleZip.Close();
-                }
+                CloseZip(bundleZip);
             }
             return null;
         }
 
-        // Вспомогательный метод парсинга XML-манифеста
-        private string ParseProductIdFromXml(string xmlContent)
+        /// <summary>
+        /// Порядок кандидатов: сначала ARM, затем neutral (по AppxBundleManifest.xml).
+        /// x86/x64 для телефона бесполезны. Если манифест бандла не удалось разобрать - все .appx подряд.
+        /// </summary>
+        private static List<string> GetCandidateAppxEntries(ZipFile bundleZip)
+        {
+            var allAppx = new List<string>();
+            ZipEntry bundleManifest = null;
+
+            foreach (ZipEntry e in bundleZip)
+            {
+                if (e.Name.EndsWith(".appx", StringComparison.OrdinalIgnoreCase))
+                    allAppx.Add(e.Name);
+                if (e.Name.EndsWith("AppxBundleManifest.xml", StringComparison.OrdinalIgnoreCase))
+                    bundleManifest = e;
+            }
+
+            var ranked = new List<KeyValuePair<int, string>>();
+            if (bundleManifest != null)
+            {
+                try
+                {
+                    string xml;
+                    using (Stream s = bundleZip.GetInputStream(bundleManifest))
+                    using (var r = new StreamReader(s))
+                    {
+                        xml = r.ReadToEnd();
+                    }
+
+                    var doc = XDocument.Parse(xml);
+                    foreach (var p in doc.Descendants().Where(x => x.Name.LocalName == "Package"))
+                    {
+                        string type = (string)p.Attribute("Type");
+                        if (type != null && !type.Equals("application", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        string fileName = (string)p.Attribute("FileName");
+                        if (fileName == null) continue;
+
+                        string arch = ((string)p.Attribute("Architecture") ?? "neutral").ToLowerInvariant();
+                        int rank = arch == "arm" ? 0 : (arch == "neutral" ? 1 : -1);
+                        if (rank < 0) continue;
+
+                        string entryName = allAppx.FirstOrDefault(n => n.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+                        if (entryName != null)
+                            ranked.Add(new KeyValuePair<int, string>(rank, entryName));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("Ошибка разбора AppxBundleManifest.xml: " + ex.Message);
+                }
+            }
+
+            var ordered = ranked.OrderBy(k => k.Key).Select(k => k.Value).ToList();
+            return ordered.Count > 0 ? ordered : allAppx;
+        }
+
+        /// <summary>Читает PhoneProductId из AppxManifest.xml внутри .appx. requireExe - отсеивает ресурсные пакеты.</summary>
+        private static string ReadProductIdFromAppx(string appxPath, bool requireExe)
+        {
+            ZipFile zip = null;
+            try
+            {
+                zip = OpenZip(appxPath);
+
+                bool hasExe = false;
+                ZipEntry manifest = null;
+                foreach (ZipEntry e in zip)
+                {
+                    if (e.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) hasExe = true;
+                    if (e.Name.Equals("AppxManifest.xml", StringComparison.OrdinalIgnoreCase)) manifest = e;
+                }
+
+                if (manifest == null || (requireExe && !hasExe)) return null;
+
+                using (Stream s = zip.GetInputStream(manifest))
+                using (var reader = new StreamReader(s))
+                {
+                    return ParseProductIdFromXml(reader.ReadToEnd());
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("[Ошибка парсинга AppxManifest.xml] " + ex.Message);
+                return null;
+            }
+            finally
+            {
+                CloseZip(zip);
+            }
+        }
+
+        private static string ParseProductIdFromXml(string xmlContent)
         {
             try
             {
                 XDocument doc = XDocument.Parse(xmlContent);
 
-                // Пространство имен Windows Phone 8.1
                 XNamespace mp2014 = "http://schemas.microsoft.com/appx/2014/phone/manifest";
                 var phoneIdentity = doc.Descendants(mp2014 + "PhoneIdentity").FirstOrDefault();
 
                 if (phoneIdentity == null)
                 {
-                    // альтернативное пространство имен 2013 года
                     XNamespace mp2013 = "http://schemas.microsoft.com/appx/2013/phone/manifest";
                     phoneIdentity = doc.Descendants(mp2013 + "PhoneIdentity").FirstOrDefault();
                 }
 
-                if (phoneIdentity != null)
-                {
-                    var attribute = phoneIdentity.Attribute("PhoneProductId");
-                    if (attribute != null)
-                    {
-                        return attribute.Value;
-                    }
-                }
+                var attribute = phoneIdentity?.Attribute("PhoneProductId");
+                if (attribute != null) return attribute.Value;
             }
             catch (Exception ex)
             {
@@ -545,12 +534,87 @@ namespace MEmarket.Services
             return null;
         }
 
-        // Парсинг лога утилиты th.exe для извлечения кода ошибки
-        private void ParseErrorLog(string logText, InstallResult result)
+        private static ZipFile OpenZip(string path)
+        {
+            FileStream fs = File.OpenRead(path);
+            try
+            {
+                return new ZipFile(fs);
+            }
+            catch
+            {
+                fs.Dispose();
+                throw;
+            }
+        }
+
+        private static void CloseZip(ZipFile zip)
+        {
+            if (zip == null) return;
+            zip.IsStreamOwner = true;
+            zip.Close();
+        }
+
+        // ------------------------------------------------------------------
+        // Логи
+        // ------------------------------------------------------------------
+
+        private TelnetClient CreateTelnet(CancellationToken ct)
+        {
+            var telnet = new TelnetClient(TimeSpan.FromSeconds(3), ct);
+            telnet.MessageSent += (s, msg) => WriteLog("[Telnet >] " + msg);
+            telnet.MessageReceived += (s, msg) => WriteLog("[Telnet] " + msg);
+            telnet.ErrorReceived += (s, err) => WriteLog("[Telnet Ошибка] " + err);
+            return telnet;
+        }
+
+        private void WriteLog(string message)
+        {
+            lock (_sessionLog)
+            {
+                _sessionLog.AppendLine($"[{DateTime.Now:HH:mm:ss}] {message}");
+            }
+            LogUpdated?.Invoke(message);
+        }
+
+        private string BuildCleanLog(string extraOutputs)
+        {
+            string session;
+            lock (_sessionLog) { session = _sessionLog.ToString(); }
+            return CleanLogLines(session + "\r\n" + (extraOutputs ?? ""));
+        }
+
+        private static void AppendOutput(StringBuilder sb, string title, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            sb.AppendLine("---- " + title + " ----");
+            sb.AppendLine(text);
+        }
+
+        private async Task ExportErrorLogAsync(TelnetClient telnet, string id, List<string> tempLocalFiles, string cleanLog)
+        {
+            try
+            {
+                string localLogPath = TrackLocal(tempLocalFiles, id + "_errlog.txt");
+                using (var fs = new FileStream(localLogPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (var writer = new StreamWriter(fs, new UTF8Encoding(false)))
+                {
+                    writer.Write(cleanLog);
+                }
+
+                await telnet.SendAsync($"copy {Q(localLogPath)} {Q(PublicErrorLogPath)}");
+                WriteLog("Лог ошибок сохранен на телефон.");
+            }
+            catch (Exception ex)
+            {
+                WriteLog("Ошибка экспорта лога: " + ex.Message);
+            }
+        }
+
+        private static void ParseErrorLog(string logText, InstallResult result)
         {
             if (string.IsNullOrEmpty(logText)) return;
 
-            // Ищем код ошибки PacMan (например, 0x800b0109)
             var codeMatch = Regex.Match(logText, @"PacMan Error Code\s*=\s*(0x[0-9a-fA-F]+)", RegexOptions.IgnoreCase);
             if (codeMatch.Success)
             {
@@ -565,7 +629,6 @@ namespace MEmarket.Services
                 }
             }
 
-            // Поиск текстового описания ошибки
             var descMatch = Regex.Match(logText, @"PacMan Error Description\s*=\s*([^\r\n]+)", RegexOptions.IgnoreCase);
             if (descMatch.Success)
             {
@@ -581,8 +644,7 @@ namespace MEmarket.Services
             }
         }
 
-        // Очистка лога от системных строк отладчика VS
-        private string CleanLogLines(string rawLog)
+        private static string CleanLogLines(string rawLog)
         {
             if (string.IsNullOrEmpty(rawLog)) return string.Empty;
 
@@ -592,10 +654,37 @@ namespace MEmarket.Services
                 !line.Contains("exited with code") &&
                 !line.Contains("The program '") &&
                 !line.Contains("AgHost.exe") &&
-                !string.IsNullOrWhiteSpace(line)
-            );
+                !string.IsNullOrWhiteSpace(line));
 
             return string.Join("\r\n", cleanLines);
+        }
+
+        // ------------------------------------------------------------------
+        // Файловые утилиты
+        // ------------------------------------------------------------------
+
+        /// <summary>Регистрирует имя временного файла для удаления в finally и возвращает полный путь.</summary>
+        private string TrackLocal(List<string> list, string fileName)
+        {
+            if (!list.Contains(fileName)) list.Add(fileName);
+            return Path.Combine(_localDataFolder.Path, fileName);
+        }
+
+        private static string ReadTextShared(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return "";
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var reader = new StreamReader(fs, Encoding.UTF8, true))
+                {
+                    return reader.ReadToEnd().Trim();
+                }
+            }
+            catch
+            {
+                return "";
+            }
         }
 
         private async Task SafeDeleteFileAsync(string fileName)
@@ -603,19 +692,16 @@ namespace MEmarket.Services
             try
             {
                 var file = await _localDataFolder.GetFileAsync(fileName);
-                if (file != null)
-                {
-                    await file.DeleteAsync();
-                }
+                await file.DeleteAsync();
             }
             catch
             {
             }
         }
 
-        public void Cancel()
+        private static string Q(string s)
         {
-            _cts?.Cancel();
+            return "\"" + s + "\"";
         }
     }
 }

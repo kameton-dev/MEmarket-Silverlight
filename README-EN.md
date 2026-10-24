@@ -59,7 +59,7 @@ git clone https://github.com/kameton-dev/MEmarket-Silverlight.git
 - [**Project website**](http://millenniummarket.online)
 - [How to quickly and easily create your own repository](http://millenniummarket.online/docs/index.html#about-memarketrepo)
 - [MEmarket-Basic GitHub repository.](https://github.com/kameton-dev/MEmarket-Basic/)
-- [Follow the development on the Telegram channel!](https://t.me/SimpSoft)
+- [Follow the development on the Telegram channel!](https://t.me/SimpSoftware)
 - [README Reference](https://github.com/monogram-android/monogram/blob/develop/README_RU.md)
 
 ---

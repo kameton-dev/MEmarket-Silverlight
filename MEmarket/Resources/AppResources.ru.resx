@@ -388,4 +388,10 @@ C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
   <data name="UpdAvailableText" xml:space="preserve">
     <value>Доступно обновление</value>
   </data>
+  <data name="CollapseText" xml:space="preserve">
+    <value>Свернуть</value>
+  </data>
+  <data name="ExpandText" xml:space="preserve">
+    <value>Развернуть</value>
+  </data>
 </root>

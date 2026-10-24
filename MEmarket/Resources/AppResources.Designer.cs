@@ -412,6 +412,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Collapse.
+        /// </summary>
+        public static string CollapseText {
+            get {
+                return ResourceManager.GetString("CollapseText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Creator:.
         /// </summary>
         public static string CreatorText {
@@ -468,6 +477,15 @@ namespace MEmarket.Resources {
         public static string DownloadUrlError {
             get {
                 return ResourceManager.GetString("DownloadUrlError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Expand.
+        /// </summary>
+        public static string ExpandText {
+            get {
+                return ResourceManager.GetString("ExpandText", resourceCulture);
             }
         }
         

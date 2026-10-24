@@ -250,7 +250,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="socketex.tcpclient">
-      <HintPath>..\..\LiveStore\Bin\Debug\socketex.tcpclient.dll</HintPath>
+      <HintPath>..\..\socketex.tcpclient.dll</HintPath>
     </Reference>
     <Reference Include="System.ComponentModel.Primitives, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ComponentModel.Primitives.4.3.0\lib\netstandard1.0\System.ComponentModel.Primitives.dll</HintPath>

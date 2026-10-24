@@ -388,4 +388,10 @@ Ensure that you CMD-Injected your phone. Without this, application installation 
   <data name="UpdAvailableText" xml:space="preserve">
     <value>Update available</value>
   </data>
+  <data name="CollapseText" xml:space="preserve">
+    <value>Collapse</value>
+  </data>
+  <data name="ExpandText" xml:space="preserve">
+    <value>Expand</value>
+  </data>
 </root>

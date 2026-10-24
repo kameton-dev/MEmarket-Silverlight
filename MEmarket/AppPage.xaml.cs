@@ -28,11 +28,15 @@ namespace MEmarket
         private AppItem _currentApp;
         private List<AppVersion> _versions;
         private int _currentScreenshotIndex = -1;
+        private const double DescriptionCollapsedHeight = 150;
+        private const double DescriptionCollapseTolerance = 24;
+        private bool _isDescriptionExpanded;
 
         public AppPage()
         {
             InitializeComponent();
             BuildApplicationBar();
+            Loaded += (s, e) => UpdateDescriptionCollapse();
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -41,29 +45,68 @@ namespace MEmarket
 
             _currentApp = App.SelectedApp;
             if (_currentApp == null) return;
-            
+
             AppPivot.Title = _currentApp.Name ?? "APP";
             AppName.Text = _currentApp.Name ?? string.Empty;
             DeveloperText.Text = _currentApp.Publisher ?? string.Empty;
             CategoryText.Text = GetDisplayCategory(_currentApp.Category);
             AppTypeText.Text = GetDisplayAppType(_currentApp.AppType);
-            
+
             if (!string.IsNullOrEmpty(_currentApp.Icon) && _currentApp.Icon.StartsWith("http"))
             {
                 try { AppIcon.Source = new BitmapImage(new Uri(_currentApp.Icon)); }
                 catch { }
             }
-            
-            MarkdownRenderer.Render(DescriptionText, _currentApp.Summary ?? "");
+
+            SetDescription(_currentApp.Summary ?? "");
             SummaryText.Text = _currentApp.Summary ?? "";
             PublisherText.Text = _currentApp.Publisher ?? string.Empty;
             RepositoryText.Text = GetRepositoryName(_currentApp);
             //AppSizeText.Text = "Размер: загрузка...";
-            
+
             if (!string.IsNullOrEmpty(_currentApp.AppUrl))
             {
                 await LoadEntryAsync(_currentApp.AppUrl);
             }
+        }
+
+ 
+        private void SetDescription(string markdown)
+        {
+            MarkdownRenderer.Render(DescriptionText, markdown);
+            Dispatcher.BeginInvoke(() => UpdateDescriptionCollapse());
+        }
+
+        private void UpdateDescriptionCollapse()
+        {
+            DescriptionText.MaxHeight = double.PositiveInfinity;
+            DescriptionText.UpdateLayout();
+
+            bool needsCollapse = DescriptionText.ActualHeight > DescriptionCollapsedHeight + DescriptionCollapseTolerance;
+            if (!needsCollapse)
+            {
+                DescriptionToggleButton.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            DescriptionToggleButton.Visibility = Visibility.Visible;
+            ApplyDescriptionState();
+        }
+
+        private void ApplyDescriptionState()
+        {
+            DescriptionText.MaxHeight = _isDescriptionExpanded
+                ? double.PositiveInfinity
+                : DescriptionCollapsedHeight;
+            DescriptionToggleButton.Content = _isDescriptionExpanded
+                ? MEmarket.Resources.AppResources.CollapseText
+                : MEmarket.Resources.AppResources.ExpandText;
+        }
+
+        private void DescriptionToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            _isDescriptionExpanded = !_isDescriptionExpanded;
+            ApplyDescriptionState();
         }
 
         private void UpdateAppMetadataText()
@@ -139,10 +182,8 @@ namespace MEmarket
                     return "Silverlight";
                 case "winrt":
                     return "WinRT";
-                case "xap":
-                    return "XAP";
-                case "appx":
-                    return "APPX";
+                case "uwp":
+                    return "UWP";
                 default:
                     return FormatReadableText(normalized.Replace("_", " ").Replace("-", " "));
             }
@@ -227,7 +268,7 @@ namespace MEmarket
         private string GetRepositoryName(AppItem app)
         {
             if (app == null) return MEmarket.Resources.AppResources.IdkLol;
-            
+
             if (!string.IsNullOrEmpty(app.RepositoryName))
             {
                 return app.RepositoryName;
@@ -299,7 +340,7 @@ namespace MEmarket
 
                 if (root["description"] != null)
                 {
-                    MarkdownRenderer.Render(DescriptionText, GetLocalizedText(root["description"]));
+                    SetDescription(GetLocalizedText(root["description"]));
                 }
 
                 var bannerUrl = root["banner"]?.ToString();
@@ -320,7 +361,7 @@ namespace MEmarket
                 {
                     BannerImage.Visibility = Visibility.Collapsed;
                 }
-                
+
                 if (root["creator"] != null)
                 {
                     var creator = root["creator"].ToString();
@@ -344,7 +385,7 @@ namespace MEmarket
                 }
 
                 //AppSizeText.Text = "Размер: н/д";
-                
+
                 var screenshotsArray = root["screenshots"] as JArray;
                 if (screenshotsArray != null)
                 {
@@ -374,7 +415,7 @@ namespace MEmarket
                         ? Visibility.Visible
                         : Visibility.Collapsed;
                 }
-                
+
                 CapabilitiesPanel.Children.Clear();
                 var capsArray = root["capabilities"] as JArray;
                 if (capsArray != null)
@@ -397,7 +438,7 @@ namespace MEmarket
                         Opacity = 0.6
                     });
                 }
-                
+
                 _versions = new List<AppVersion>();
                 var versionsArray = root["versions"] as JArray;
                 if (versionsArray != null)
@@ -447,11 +488,11 @@ namespace MEmarket
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("entry.json load error: " + ex.Message);
-                MarkdownRenderer.Render(DescriptionText, _currentApp?.Summary ?? MEmarket.Resources.AppResources.IdkLol);
+                SetDescription(_currentApp?.Summary ?? MEmarket.Resources.AppResources.IdkLol);
                 SummaryText.Text = _currentApp?.Summary ?? "";
                 //AppSizeText.Text = "Размер: н/д";
                 UpdateAppMetadataText();
-                AppVersionText.Text =(_currentApp?.LatestVersion ?? MEmarket.Resources.AppResources.IdkLol);
+                AppVersionText.Text = (_currentApp?.LatestVersion ?? MEmarket.Resources.AppResources.IdkLol);
                 CapabilitiesPanel.Children.Clear();
                 CapabilitiesPanel.Children.Add(new TextBlock { Text = MEmarket.Resources.AppResources.IdkLol, Opacity = 0.6 });
                 SystemTray.SetProgressIndicator(this, null);
@@ -747,7 +788,7 @@ namespace MEmarket
 
                     LocalAppsManager.RegisterInstalledApp(
                         _currentApp.Id,
-                        _currentApp.Name,             
+                        _currentApp.Name,
                         _currentApp.Icon,
                         versionToSave,
                         repoUrl,
@@ -779,7 +820,7 @@ namespace MEmarket
                 savePicker.SuggestedFileName = fileName;
                 savePicker.ContinuationData["DownloadUrl"] = downloadUrl;
                 savePicker.ContinuationData["AppName"] = _currentApp?.Name ?? "app";
-                
+
                 savePicker.PickSaveFileAndContinue();
             }
             catch (Exception ex)
@@ -881,11 +922,6 @@ namespace MEmarket
                 }
             }
         }
-
-        //private void CloseImageViewer_Click(object sender, RoutedEventArgs e)
-        //{
-        //    CloseImageViewer();
-        //}
 
         private void CloseImageViewer()
         {

@@ -805,9 +805,9 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Warning: The local Telnet server is not running.
+        ///   Looks up a localized string similar to Warning: CMD Injector is not injected into the device.
         ///
-        ///Ensure that you CMD-Injected your phone. Without this, application installation will not work..
+        ///Full application installation will not work on your device, but you will be able to download their files. Make sure that you have injected CMDInjector..
         /// </summary>
         public static string TelnetNotRunningMessage {
             get {

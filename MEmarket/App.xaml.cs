@@ -32,6 +32,7 @@ namespace MEmarket
         public static bool ShowAppTypeFilter { get; set; }
 
         private static MainViewModel viewModel = null;
+        private static Task<bool> injectionCheckTask;
 
         /// <summary>
         /// A static ViewModel used by the views to bind against.
@@ -441,13 +442,23 @@ namespace MEmarket
         }
 
         // 1. Асинхронный метод проверки доступности локального Telnet-порта
-        private static async Task<bool> CheckInjectionActiveAsync()
+        public static Task<bool> CheckInjectionActiveAsync()
+        {
+            if (injectionCheckTask == null)
+            {
+                injectionCheckTask = CheckInjectionActiveCoreAsync();
+            }
+
+            return injectionCheckTask;
+        }
+
+        private static async Task<bool> CheckInjectionActiveCoreAsync()
         {
             try
             {
                 using (var socket = new SocketEx.TcpClient())
                 {
-                    var connectTask = Task.Run(() => socket.Connect("127.0.0.1", 23)); // Или порт 9999
+                    var connectTask = Task.Run(() => socket.Connect("127.0.0.1", 23));
                     var timeoutTask = Task.Delay(1500);
 
                     var completedTask = await Task.WhenAny(connectTask, timeoutTask);

@@ -31,6 +31,8 @@ namespace MEmarket
         private const double DescriptionCollapsedHeight = 150;
         private const double DescriptionCollapseTolerance = 24;
         private bool _isDescriptionExpanded;
+        private ApplicationBarIconButton _installButton;
+        private bool _installButtonAdded;
 
         public AppPage()
         {
@@ -45,6 +47,12 @@ namespace MEmarket
 
             _currentApp = App.SelectedApp;
             if (_currentApp == null) return;
+
+            if (await App.CheckInjectionActiveAsync() && !_installButtonAdded)
+            {
+                ApplicationBar.Buttons.Add(_installButton);
+                _installButtonAdded = true;
+            }
 
             AppPivot.Title = _currentApp.Name ?? "APP";
             AppName.Text = _currentApp.Name ?? string.Empty;
@@ -862,11 +870,10 @@ namespace MEmarket
             buttonSave.Click += SaveToDevice_Click;
             ApplicationBar.Buttons.Add(buttonSave);
 
-            ApplicationBarIconButton buttonDownload = new ApplicationBarIconButton();
-            buttonDownload.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
-            buttonDownload.Text = MEmarket.Resources.AppResources.AppBarDownload;
-            buttonDownload.Click += Install_Click;
-            ApplicationBar.Buttons.Add(buttonDownload);
+            _installButton = new ApplicationBarIconButton();
+            _installButton.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
+            _installButton.Text = MEmarket.Resources.AppResources.AppBarDownload;
+            _installButton.Click += Install_Click;
         }
 
         private void Screenshot_Tap(object sender, System.Windows.Input.GestureEventArgs e)

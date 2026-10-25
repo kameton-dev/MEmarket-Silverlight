@@ -378,9 +378,9 @@ C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
     <value>Error while saving file: </value>
   </data>
   <data name="TelnetNotRunningMessage" xml:space="preserve">
-    <value>Warning: The local Telnet server is not running.
+    <value>Warning: CMD Injector is not injected into the device.
 
-Ensure that you CMD-Injected your phone. Without this, application installation will not work.</value>
+Full application installation will not work on your device, but you will be able to download their files. Make sure that you have injected CMDInjector.</value>
   </data>
   <data name="TelnetNotRunningTitle" xml:space="preserve">
     <value>Oops! O﹏o</value>

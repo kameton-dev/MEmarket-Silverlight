@@ -378,9 +378,9 @@ C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
     <value>Ошибка при сохранении файла: </value>
   </data>
   <data name="TelnetNotRunningMessage" xml:space="preserve">
-    <value>Внимание: Локальный Telnet-сервер не запущен.
+    <value>Внимание: CMD Injector не инжектнут в устройство
 
-Убедитесь, что в приложении CMD Injector выполнена инжекция. Без этого установка приложений работать не будет.</value>
+Полноценная установка приложений не будет работать на вашем устройстве, но Вы сможете скачивать их файлы. Убедитесь, что Вы инжектнули CMD Injector</value>
   </data>
   <data name="TelnetNotRunningTitle" xml:space="preserve">
     <value>Упс! O﹏o</value>

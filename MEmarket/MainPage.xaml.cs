@@ -14,6 +14,8 @@ namespace MEmarket
 {
     public partial class MainPage : PhoneApplicationPage
     {
+        private ApplicationBarMenuItem _downloadsMenu;
+
         public MainPage()
         {
             InitializeComponent();
@@ -21,9 +23,16 @@ namespace MEmarket
             BuildApplicationBar();
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+
+            if (await App.CheckInjectionActiveAsync() && _downloadsMenu != null &&
+                !ApplicationBar.MenuItems.Contains(_downloadsMenu))
+            {
+                ApplicationBar.MenuItems.Insert(1, _downloadsMenu);
+            }
+
             if (!App.ViewModel.IsDataLoaded)
             {
                 App.ViewModel.LoadData();
@@ -122,10 +131,9 @@ namespace MEmarket
             menuRefresh.Click += Refresh_Click;
             ApplicationBar.MenuItems.Add(menuRefresh);
             
-            ApplicationBarMenuItem menuDownloads = new ApplicationBarMenuItem();
-            menuDownloads.Text = MEmarket.Resources.AppResources.AppBarDownloads;
-            menuDownloads.Click += InstalledApps_Click;
-            ApplicationBar.MenuItems.Add(menuDownloads);
+            _downloadsMenu = new ApplicationBarMenuItem();
+            _downloadsMenu.Text = MEmarket.Resources.AppResources.AppBarDownloads;
+            _downloadsMenu.Click += InstalledApps_Click;
             
             ApplicationBarMenuItem menuSettings = new ApplicationBarMenuItem();
             menuSettings.Text = MEmarket.Resources.AppResources.AppBarSettings;

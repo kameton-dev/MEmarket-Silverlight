@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -393,5 +393,20 @@ C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
   </data>
   <data name="ExpandText" xml:space="preserve">
     <value>Развернуть</value>
+  </data>
+  <data name="CheckingUpdText" xml:space="preserve">
+    <value>Проверка обновлений...</value>
+  </data>
+  <data name="ForgetButton" xml:space="preserve">
+    <value>забыть</value>
+  </data>
+  <data name="InstalledOnDeviceText" xml:space="preserve">
+    <value>Приложение установлено на устройстве</value>
+  </data>
+  <data name="InstallProgressTextUpdating" xml:space="preserve">
+    <value>Обновление </value>
+  </data>
+  <data name="ShowAppButton" xml:space="preserve">
+    <value>посмотреть приложение</value>
   </data>
 </root>

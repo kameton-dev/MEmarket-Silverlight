@@ -41,7 +41,6 @@
 
     <phone:PhoneApplicationPage.Resources>
 
-        <!-- Шаблон ОБНОВЛЕНИЯ -->
         <DataTemplate x:Key="WpStoreAppItemTemplate">
             <Grid Margin="12,0,12,24">
                 <Grid.ColumnDefinitions>
@@ -59,13 +58,12 @@
             </Grid>
         </DataTemplate>
 
-        <!-- Шаблон ЖУРНАЛ -->
         <DataTemplate x:Key="WpStoreInstalledItemTemplate">
             <Grid Margin="12,0,12,24" Background="Transparent">
                 <toolkit:ContextMenuService.ContextMenu>
-                    <toolkit:ContextMenu>
-                        <toolkit:MenuItem Header="посмотреть приложение" Click="ViewAppDetails_Click"/>
-                        <toolkit:MenuItem Header="забыть" Click="ForgetApp_Click"/>
+                    <toolkit:ContextMenu FontFamily="Portable User Interface">
+                        <toolkit:MenuItem Header="{Binding LocalizedResources.ShowAppButton, Source={StaticResource LocalizedStrings}}" Click="ViewAppDetails_Click"/>
+                        <toolkit:MenuItem Header="{Binding LocalizedResources.ForgetButton, Source={StaticResource LocalizedStrings}}" Click="ForgetApp_Click"/>
                     </toolkit:ContextMenu>
                 </toolkit:ContextMenuService.ContextMenu>
                 <Grid.ColumnDefinitions>

@@ -71,5 +71,12 @@ namespace MEmarket.Services
 
             SaveApps(apps);
         }
+
+        public static void ForgetApp(string id)
+        {
+            var apps = LoadApps();
+            apps.RemoveAll(app => app.Id == id);
+            SaveApps(apps);
+        }
     }
 }

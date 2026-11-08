@@ -89,7 +89,7 @@ namespace MEmarket.Services
             return updateableApps;
         }
 
-        private static bool IsNewerVersion(string currentVersion, string remoteVersion)
+        public static bool IsNewerVersion(string currentVersion, string remoteVersion)
         {
             Version local, remote;
             if (Version.TryParse(currentVersion, out local) && Version.TryParse(remoteVersion, out remote))

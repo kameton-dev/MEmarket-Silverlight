@@ -129,6 +129,7 @@
       <DependentUpon>SearchPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Services\LocalAppsManager.cs" />
+    <Compile Include="Services\AppUpdateService.cs" />
     <Compile Include="Services\MarkdownRenderer.cs" />
     <Compile Include="Services\MEinstaller.cs" />
     <Compile Include="Services\TelnetClient.cs" />

@@ -60,7 +60,11 @@
                                 <TextBlock x:Name="AppName" Text="App name" FontSize="36" FontFamily="Segoe WP SemiLight" VerticalAlignment="Top" Margin="195,10,0,0" Width="237"/>
                                 <TextBlock x:Name="DeveloperText" Text="Developer" VerticalAlignment="Top" Margin="195,63,0,0" Foreground="{StaticResource PhoneSubtleBrush}"/>
                             </Grid>
-                            <TextBlock x:Name="SummaryText" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" />
+                            <StackPanel x:Name="InstallationStatePanel" Visibility="Collapsed" Margin="0,0,0,8">
+                                <TextBlock x:Name="InstalledOnDeviceText" Text="{Binding LocalizedResources.InstalledOnDeviceText, Source={StaticResource LocalizedStrings}}" Margin="0,0,0,2" Opacity="0.5"/>
+                                <HyperlinkButton x:Name="ForgetInstalledAppButton" Content="{Binding LocalizedResources.ForgetButton, Source={StaticResource LocalizedStrings}}" HorizontalAlignment="Left" Padding="0" Click="ForgetInstalledAppButton_Click" FontSize="20"/>
+                            </StackPanel>
+                            <TextBlock x:Name="SummaryText" FontWeight="Bold" Margin="0,0,0,16" TextWrapping="Wrap" FontSize="22" />
 
                             <Grid Margin="-12,0">
                                 <RichTextBox x:Name="DescriptionText"

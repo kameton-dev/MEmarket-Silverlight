@@ -403,6 +403,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Checking for updates....
+        /// </summary>
+        public static string CheckingUpdText {
+            get {
+                return ResourceManager.GetString("CheckingUpdText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to check for updates.
         /// </summary>
         public static string CheckUpdButton {
@@ -508,6 +517,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to forget.
+        /// </summary>
+        public static string ForgetButton {
+            get {
+                return ResourceManager.GetString("ForgetButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to idk lol.
         /// </summary>
         public static string IdkLol {
@@ -544,6 +562,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The app is installed on the device.
+        /// </summary>
+        public static string InstalledOnDeviceText {
+            get {
+                return ResourceManager.GetString("InstalledOnDeviceText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to installed.
         /// </summary>
         public static string InstalledPivotHeader {
@@ -567,6 +594,15 @@ namespace MEmarket.Resources {
         public static string InstallProgressTextInstalling {
             get {
                 return ResourceManager.GetString("InstallProgressTextInstalling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Updating .
+        /// </summary>
+        public static string InstallProgressTextUpdating {
+            get {
+                return ResourceManager.GetString("InstallProgressTextUpdating", resourceCulture);
             }
         }
         
@@ -792,6 +828,15 @@ namespace MEmarket.Resources {
         public static string SettingsHeader {
             get {
                 return ResourceManager.GetString("SettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to show app.
+        /// </summary>
+        public static string ShowAppButton {
+            get {
+                return ResourceManager.GetString("ShowAppButton", resourceCulture);
             }
         }
         

@@ -1,18 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
-using Windows.Data.Json;
 using MEmarket.Services;
 using MEmarket.Models;
-using Windows.Storage.Pickers;
-using System.IO;
 
 namespace MEmarket
 {
@@ -67,7 +62,7 @@ namespace MEmarket
         private async void CheckUpdatesButton_Click(object sender, RoutedEventArgs e)
         {
             CheckUpdatesButton.IsEnabled = false;
-            SetLoading(true, "Проверка обновлений...");
+            SetLoading(true, MEmarket.Resources.AppResources.CheckingUpdText);
             AvailableUpdates.Clear();
 
             try
@@ -122,104 +117,45 @@ namespace MEmarket
         {
             if (app == null || string.IsNullOrEmpty(app.AppUrl)) return;
 
-            SetLoading(true, "Подготовка к загрузке...");
+            SetLoading(true, MEmarket.Resources.AppResources.LoadingText);
 
             try
             {
-                string entryUrl = app.AppUrl.TrimEnd('/') + "/entry.json";
-                HttpClient client = new HttpClient();
-                string entryJsonText = await client.GetStringAsync(new Uri(entryUrl));
-
-                string appFileName = null;
-                
-                JsonObject entryRoot;
-                if (JsonObject.TryParse(entryJsonText, out entryRoot))
+                var result = await AppUpdateService.UpdateAsync(
+                    app,
+                    status => SetLoading(true, status),
+                    isInstalling => Dispatcher.BeginInvoke(() =>
+                    {
+                        if (SystemTray.ProgressIndicator != null)
+                        {
+                            SystemTray.ProgressIndicator.IsIndeterminate = isInstalling;
+                        }
+                    }));
+                if (result.IsSuccess)
                 {
-                    if (entryRoot.ContainsKey("versions"))
-                    {
-                        JsonArray versions = entryRoot.GetNamedArray("versions");
-                        
-                        foreach (var v in versions)
-                        {
-                            var versionObj = v.GetObject();
-                            string verStr = versionObj.GetNamedString("version");
-
-                            if (verStr == app.NewVersion)
-                            {
-                                appFileName = versionObj.GetNamedString("app_file");
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (!string.IsNullOrEmpty(appFileName))
-                    {
-                        string downloadUrl = app.AppUrl.TrimEnd('/') + "/" + appFileName;
-                        
-                        try
-                        {
-                            string repoUrl = "";
-                            if (!string.IsNullOrEmpty(app.AppUrl))
-                            {
-                                var appUri = new Uri(app.AppUrl);
-                                repoUrl = appUri.Scheme + "://" + appUri.Host;
-                                
-                                if (appUri.Port != 80 && appUri.Port != 443)
-                                {
-                                    repoUrl += ":" + appUri.Port;
-                                }
-                            }
-                            
-                            LocalAppsManager.RegisterInstalledApp(
-                                app.Id,
-                                app.Name,
-                                app.Icon,
-                                app.NewVersion,
-                                repoUrl,
-                                app.AppUrl
-                            );
-
-                            System.Diagnostics.Debug.WriteLine("Обновление приложения " + app.Name + " зафиксировано в БД.");
-                        }
-                        catch (Exception dbEx)
-                        {
-                            System.Diagnostics.Debug.WriteLine("Ошибка записи обновления в базу: " + dbEx.Message);
-                        }
-                        
-                        SetLoading(false);
-                        
-                        var savePicker = new FileSavePicker();
-                        savePicker.SuggestedStartLocation = PickerLocationId.Downloads;
-
-                        var fileName = Path.GetFileName(downloadUrl.Split('?')[0]);
-                        var extension = Path.GetExtension(fileName).ToLower();
-
-                        if (extension == ".xap")
-                            savePicker.FileTypeChoices.Add("XAP-файлы", new List<string>() { ".xap" });
-                        else if (extension == ".appx")
-                            savePicker.FileTypeChoices.Add("APPX-файлы", new List<string>() { ".appx" });
-                        else if (extension == ".appxbundle")
-                            savePicker.FileTypeChoices.Add("APPX Bundle-файлы", new List<string>() { ".appxbundle" });
-                        else
-                            savePicker.FileTypeChoices.Add("Файлы приложений", new List<string>() { string.IsNullOrEmpty(extension) ? ".bin" : extension });
-
-                        savePicker.SuggestedFileName = fileName;
-                        savePicker.ContinuationData["DownloadUrl"] = downloadUrl;
-                        savePicker.ContinuationData["AppName"] = app.Name;
-                        
-                        savePicker.PickSaveFileAndContinue();
-                    }
-                    else
-                    {
-                        SetLoading(false);
-                        MessageBox.Show(MEmarket.Resources.AppResources.FindingPkgNameError, "┐(︶▽︶)┌", MessageBoxButton.OK);
-                    }
+                    AvailableUpdates.Remove(app);
+                    MessageBox.Show(app.Name + " успешно обновлено.", "( ˶ˆᗜˆ˵ )", MessageBoxButton.OK);
+                    await RefreshInstalledListAsync();
+                }
+                else
+                {
+                    string errorCode = result.ErrorCode ?? MEmarket.Resources.AppResources.IdkLol;
+                    string errorDescription = result.ErrorDescription ?? MEmarket.Resources.AppResources.IdkLol;
+                    string errorMessage = string.Format(
+                        MEmarket.Resources.AppResources.DeployingErrorMessageFormat,
+                        app.Name,
+                        errorCode,
+                        errorDescription);
+                    MessageBox.Show(errorMessage, "(╥_╥)", MessageBoxButton.OK);
                 }
             }
             catch (Exception ex)
             {
-                SetLoading(false);
                 MessageBox.Show(MEmarket.Resources.AppResources.RetrievingLinkError + ex.Message, "(・・;)ゞ", MessageBoxButton.OK);
+            }
+            finally
+            {
+                SetLoading(false);
             }
         }
         
@@ -268,9 +204,7 @@ namespace MEmarket
 
                 try
                 {
-                    var apps = await Task.Run(() => LocalAppsManager.LoadApps());
-                    apps.RemoveAll(a => a.Id == appToForget.Id);
-                    await Task.Run(() => LocalAppsManager.SaveApps(apps));
+                    await Task.Run(() => LocalAppsManager.ForgetApp(appToForget.Id));
                     await RefreshInstalledListAsync();
                 }
                 catch (Exception ex)

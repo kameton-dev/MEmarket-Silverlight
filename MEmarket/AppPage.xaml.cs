@@ -31,8 +31,11 @@ namespace MEmarket
         private const double DescriptionCollapsedHeight = 150;
         private const double DescriptionCollapseTolerance = 24;
         private bool _isDescriptionExpanded;
+        private TrackedApp _installedApp;
+        private ApplicationBarIconButton _saveButton;
         private ApplicationBarIconButton _installButton;
-        private bool _installButtonAdded;
+        private ApplicationBarIconButton _updateButton;
+        private bool _injectionAvailable;
 
         public AppPage()
         {
@@ -48,11 +51,7 @@ namespace MEmarket
             _currentApp = App.SelectedApp;
             if (_currentApp == null) return;
 
-            if (await App.CheckInjectionActiveAsync() && !_installButtonAdded)
-            {
-                ApplicationBar.Buttons.Add(_installButton);
-                _installButtonAdded = true;
-            }
+            _injectionAvailable = await App.CheckInjectionActiveAsync();
 
             AppPivot.Title = _currentApp.Name ?? "APP";
             AppName.Text = _currentApp.Name ?? string.Empty;
@@ -76,6 +75,8 @@ namespace MEmarket
             {
                 await LoadEntryAsync(_currentApp.AppUrl);
             }
+
+            await RefreshInstallationStateAsync();
         }
 
  
@@ -490,6 +491,11 @@ namespace MEmarket
                     VersionComboBox.Visibility = Visibility.Collapsed;
                 }
 
+                if (string.IsNullOrEmpty(_currentApp.LatestVersion) && _versions.Count > 0)
+                {
+                    _currentApp.LatestVersion = _versions[0].Version;
+                }
+
                 progressIndicator.IsVisible = false;
                 SystemTray.SetProgressIndicator(this, null);
             }
@@ -726,7 +732,8 @@ namespace MEmarket
                         System.Diagnostics.Debug.WriteLine("Ошибка записи в журнал установленных: " + dbEx.Message);
                     }
 
-                    MessageBox.Show((_currentApp?.Name ?? MEmarket.Resources.AppResources.IdkLol) + MEmarket.Resources.AppResources.AppInstallSuccessMessage, "( ˶ˆᗜˆ˵ )", MessageBoxButton.OK);
+                    await RefreshInstallationStateAsync();
+                    MessageBox.Show((_currentApp?.Name ?? MEmarket.Resources.AppResources.IdkLol) + MEmarket.Resources.AppResources.AppInstallSuccessMessage, "( ˶ˆᗜˆ˵)", MessageBoxButton.OK);
                 }
                 else
                 {
@@ -753,13 +760,7 @@ namespace MEmarket
             }
             finally
             {
-                if (ApplicationBar != null)
-                {
-                    foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
-                    {
-                        button.IsEnabled = true;
-                    }
-                }
+                ApplyInstallationState();
             }
         }
 
@@ -778,38 +779,6 @@ namespace MEmarket
 
             try
             {
-                // Сохранения прилоения в installer_apps.json перед скачиванием
-                try
-                {
-                    string versionToSave = version != null ? version.Version : (_currentApp.LatestVersion ?? "1.0.0.0");
-
-                    string repoUrl = "";
-                    if (!string.IsNullOrEmpty(_currentApp.AppUrl))
-                    {
-                        var appUri = new Uri(_currentApp.AppUrl);
-                        repoUrl = appUri.Scheme + "://" + appUri.Host;
-                        if (appUri.Port != 80 && appUri.Port != 443)
-                        {
-                            repoUrl += ":" + appUri.Port;
-                        }
-                    }
-
-                    LocalAppsManager.RegisterInstalledApp(
-                        _currentApp.Id,
-                        _currentApp.Name,
-                        _currentApp.Icon,
-                        versionToSave,
-                        repoUrl,
-                        _currentApp.AppUrl
-                    );
-
-                    System.Diagnostics.Debug.WriteLine("Приложение " + _currentApp.Name + " успешно добавлено в журнал.");
-                }
-                catch (Exception dbEx)
-                {
-                    System.Diagnostics.Debug.WriteLine("Ошибка записи в базу приложений: " + dbEx.Message);
-                }
-
                 var savePicker = new FileSavePicker();
                 savePicker.SuggestedStartLocation = PickerLocationId.Downloads;
 
@@ -860,20 +829,198 @@ namespace MEmarket
             }
         }
 
+        private async Task RefreshInstallationStateAsync()
+        {
+            _installedApp = null;
+            if (!string.IsNullOrEmpty(_currentApp.Id))
+            {
+                var installedApps = await Task.Run(() => LocalAppsManager.LoadApps());
+                _installedApp = installedApps.FirstOrDefault(app => app.Id == _currentApp.Id);
+            }
+
+            InstallationStatePanel.Visibility = _installedApp == null
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            ApplyInstallationState();
+        }
+
+        private void ApplyInstallationState()
+        {
+            bool isInstalled = _installedApp != null;
+            bool updateAvailable = isInstalled &&
+                UpdateChecker.IsNewerVersion(_installedApp.InstalledVersion, GetLatestVersion());
+
+            InstallationStatePanel.Visibility = isInstalled
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            _saveButton.IsEnabled = !isInstalled;
+
+            bool showUpdateButton = _injectionAvailable && updateAvailable;
+            SetApplicationBarButtonVisible(_installButton, _injectionAvailable && !showUpdateButton);
+            SetApplicationBarButtonVisible(_updateButton, showUpdateButton);
+
+            _installButton.IsEnabled = !isInstalled;
+            _updateButton.IsEnabled = showUpdateButton;
+        }
+
+        private void SetApplicationBarButtonVisible(ApplicationBarIconButton button, bool isVisible)
+        {
+            bool isAdded = ApplicationBar.Buttons.Contains(button);
+            if (isVisible && !isAdded)
+            {
+                ApplicationBar.Buttons.Add(button);
+            }
+            else if (!isVisible && isAdded)
+            {
+                ApplicationBar.Buttons.Remove(button);
+            }
+        }
+
+        private string GetLatestVersion()
+        {
+            if (!string.IsNullOrEmpty(_currentApp.LatestVersion))
+            {
+                return _currentApp.LatestVersion;
+            }
+
+            return _versions != null && _versions.Count > 0
+                ? _versions[0].Version
+                : string.Empty;
+        }
+
+        private async void UpdateInstalledApp_Click(object sender, EventArgs e)
+        {
+            if (_installedApp == null) return;
+
+            var latestVersion = GetLatestVersion();
+            if (!UpdateChecker.IsNewerVersion(_installedApp.InstalledVersion, latestVersion)) return;
+
+            var update = new UpdateableApp
+            {
+                Id = _installedApp.Id,
+                Name = _currentApp.Name,
+                Icon = _currentApp.Icon,
+                InstalledVersion = _installedApp.InstalledVersion,
+                NewVersion = latestVersion,
+                RepositoryUrl = _installedApp.RepositoryUrl,
+                AppUrl = _currentApp.AppUrl
+            };
+
+            SetApplicationBarButtonsEnabled(false);
+            try
+            {
+                var result = await AppUpdateService.UpdateAsync(
+                    update,
+                    SetUpdateStatus,
+                    isInstalling => Dispatcher.BeginInvoke(() =>
+                    {
+                        if (SystemTray.ProgressIndicator != null)
+                        {
+                            SystemTray.ProgressIndicator.IsIndeterminate = isInstalling;
+                        }
+                    }));
+
+                if (result.IsSuccess)
+                {
+                    await RefreshInstallationStateAsync();
+                    MessageBox.Show(_currentApp.Name + " успешно обновлено.", "( ˶ˆᗜˆ˵ )", MessageBoxButton.OK);
+                }
+                else
+                {
+                    ShowUpdateError(_currentApp.Name, result);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(MEmarket.Resources.AppResources.RetrievingLinkError + ex.Message, "(・・;)ゞ", MessageBoxButton.OK);
+            }
+            finally
+            {
+                SystemTray.SetProgressIndicator(this, null);
+                ApplyInstallationState();
+            }
+        }
+
+        private void SetUpdateStatus(string text)
+        {
+            var progressIndicator = SystemTray.ProgressIndicator;
+            if (progressIndicator == null)
+            {
+                progressIndicator = new ProgressIndicator();
+                SystemTray.SetProgressIndicator(this, progressIndicator);
+            }
+
+            progressIndicator.IsVisible = true;
+            progressIndicator.IsIndeterminate = true;
+            progressIndicator.Text = text;
+        }
+
+        private void SetApplicationBarButtonsEnabled(bool isEnabled)
+        {
+            foreach (IApplicationBarIconButton button in ApplicationBar.Buttons)
+            {
+                button.IsEnabled = isEnabled;
+            }
+        }
+
+        private void ShowUpdateError(string appName, InstallResult result)
+        {
+            string errorCode = result.ErrorCode ?? MEmarket.Resources.AppResources.IdkLol;
+            string errorDescription = result.ErrorDescription ?? MEmarket.Resources.AppResources.IdkLol;
+            string errorMessage = string.Format(
+                MEmarket.Resources.AppResources.DeployingErrorMessageFormat,
+                appName ?? MEmarket.Resources.AppResources.IdkLol,
+                errorCode,
+                errorDescription);
+            MessageBox.Show(errorMessage, "(╥_╥)", MessageBoxButton.OK);
+        }
+
+        private async void ForgetInstalledAppButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_installedApp == null) return;
+
+            MessageBoxResult result = MessageBox.Show(
+                "Вы действительно хотите удалить \"" + _installedApp.Name + "\" из журнала загрузок?",
+                "(¬ ¬ )",
+                MessageBoxButton.OKCancel);
+
+            if (result != MessageBoxResult.OK) return;
+
+            SetUpdateStatus("Удаление из журнала...");
+            try
+            {
+                await Task.Run(() => LocalAppsManager.ForgetApp(_installedApp.Id));
+                await RefreshInstallationStateAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка при удалении: " + ex.Message);
+            }
+            finally
+            {
+                SystemTray.SetProgressIndicator(this, null);
+            }
+        }
+
         private void BuildApplicationBar()
         {
             ApplicationBar = new ApplicationBar();
 
-            ApplicationBarIconButton buttonSave = new ApplicationBarIconButton();
-            buttonSave.IconUri = new Uri("/Assets/AppBar/save.png", UriKind.Relative);
-            buttonSave.Text = MEmarket.Resources.AppResources.AppBarSave;
-            buttonSave.Click += SaveToDevice_Click;
-            ApplicationBar.Buttons.Add(buttonSave);
+            _saveButton = new ApplicationBarIconButton();
+            _saveButton.IconUri = new Uri("/Assets/AppBar/save.png", UriKind.Relative);
+            _saveButton.Text = MEmarket.Resources.AppResources.AppBarSave;
+            _saveButton.Click += SaveToDevice_Click;
+            ApplicationBar.Buttons.Add(_saveButton);
 
             _installButton = new ApplicationBarIconButton();
             _installButton.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
             _installButton.Text = MEmarket.Resources.AppResources.AppBarDownload;
             _installButton.Click += Install_Click;
+
+            _updateButton = new ApplicationBarIconButton();
+            _updateButton.IconUri = new Uri("/Assets/AppBar/download.png", UriKind.Relative);
+            _updateButton.Text = "Обновить";
+            _updateButton.Click += UpdateInstalledApp_Click;
         }
 
         private void Screenshot_Tap(object sender, System.Windows.Input.GestureEventArgs e)

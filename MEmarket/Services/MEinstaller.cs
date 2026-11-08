@@ -41,10 +41,12 @@ namespace MEmarket.Services
             public string ProductId { get; set; }
         }
 
-        /// <summary>
-        /// Внимание: события вызываются из фоновых потоков (в т.ч. из потока чтения telnet).
-        /// Подписчик должен сам переключаться на UI-поток.
-        /// </summary>
+        private enum DeployMode
+        {
+            Install,
+            Update
+        }
+
         public event Action<string> LogUpdated;
         public event Action<bool> ProgressStateChanged;
 
@@ -52,7 +54,22 @@ namespace MEmarket.Services
         // Публичный API
         // ------------------------------------------------------------------
 
-        public async Task<InstallResult> InstallAppAsync(StorageFile packageFile, bool installToSdCard = false, bool uninstallFirst = true)
+        public Task<InstallResult> InstallAppAsync(StorageFile packageFile, bool installToSdCard = false, bool uninstallFirst = true)
+        {
+            return ExecuteAsync(packageFile, DeployMode.Install, installToSdCard, uninstallFirst);
+        }
+
+        /// <summary>
+        /// Обновляет уже установленное приложение (TH.exe ... -uda): данные приложения сохраняются.
+        /// Сценарий тот же, что и у установки: стандартная попытка, затем (для .appx/.appxbundle)
+        /// попытка с удалением подписи.
+        /// </summary>
+        public Task<InstallResult> UpdateAppAsync(StorageFile packageFile)
+        {
+            return ExecuteAsync(packageFile, DeployMode.Update, false, false);
+        }
+
+        private async Task<InstallResult> ExecuteAsync(StorageFile packageFile, DeployMode mode, bool installToSdCard, bool uninstallFirst)
         {
             if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
             {
@@ -66,7 +83,7 @@ namespace MEmarket.Services
             lock (_sessionLog) { _sessionLog.Clear(); }
 
             var result = new InstallResult { IsSuccess = false };
-            var tempLocalFiles = new List<string>(); // имена файлов в _localDataFolder
+            var tempLocalFiles = new List<string>();
             TelnetClient telnet = null;
             string id = Guid.NewGuid().ToString("N").Substring(0, 8);
 
@@ -80,7 +97,7 @@ namespace MEmarket.Services
                 }
 
                 telnet = CreateTelnet(cts.Token);
-                await RunInstallAsync(packageFile, installToSdCard, uninstallFirst, id, telnet, tempLocalFiles, result, cts.Token);
+                await RunInstallAsync(packageFile, mode, installToSdCard, uninstallFirst, id, telnet, tempLocalFiles, result, cts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -125,25 +142,26 @@ namespace MEmarket.Services
         // ------------------------------------------------------------------
 
         private async Task RunInstallAsync(
-            StorageFile package, bool installToSdCard, bool uninstallFirst,
+            StorageFile package, DeployMode mode, bool installToSdCard, bool uninstallFirst,
             string id, TelnetClient telnet, List<string> tempLocalFiles,
             InstallResult result, CancellationToken ct)
         {
             string ext = Path.GetExtension(package.Name).ToLowerInvariant();
             if (string.IsNullOrEmpty(ext)) ext = ".xap";
-            string deployParam = installToSdCard ? "-dis" : "-di";
+            bool isUpdate = mode == DeployMode.Update;
 
-            var outputs = new StringBuilder(); // содержимое всех output-файлов для итогового лога
+            string deployParam = isUpdate ? "-uda" : (installToSdCard ? "-dis" : "-di");
+            string deployFlagManifest = isUpdate ? "-uda" : "-de";
+            if (isUpdate) uninstallFirst = false;
+
+            var outputs = new StringBuilder();
             string failReason = null;
             string lastDeployLog = "";
 
-            // 0. Копируем пакет в нашу папку под ASCII-именем (GUID).
-            //    Так в bat не попадают пользовательские имена (кириллица, %, & и т.п.)
             WriteLog("Подготовка пакета...");
             StorageFile staged = await package.CopyAsync(_localDataFolder, id + ext, NameCollisionOption.ReplaceExisting);
             string stagedPath = TrackLocal(tempLocalFiles, staged.Name);
 
-            // 1. Telnet
             WriteLog("Подключение к локальному Telnet-серверу...");
             if (!await telnet.ConnectAsync(TelnetHost, TelnetPort))
             {
@@ -157,7 +175,7 @@ namespace MEmarket.Services
             // ==============================================================
             // ПОПЫТКА 1: стандартный деплой (-di / -dis)
             // ==============================================================
-            WriteLog("Попытка 1: стандартная установка...");
+            WriteLog(isUpdate ? "Попытка 1: стандартное обновление..." : "Попытка 1: стандартная установка...");
 
             string pub1 = $@"{PublicDir}\mei_{id}{ext}";
             string bat1 = TrackLocal(tempLocalFiles, id + "_1.bat");
@@ -169,13 +187,11 @@ namespace MEmarket.Services
             script1.Add($"copy {Q(stagedPath)} {Q(pub1)}");
             if (uninstallFirst)
             {
-                // Вывод удаления - в отдельный файл, чтобы его "Completed Successfully."
-                // не принять за успех установки.
                 script1.Add($"TH.exe {Q(pub1)} -u > {Q(out1u)} 2>&1");
                 script1.Add("sleep 3");
             }
             script1.Add($"TH.exe {Q(pub1)} {deployParam} > {Q(out1)} 2>&1");
-            script1.Add("set RC=%errorlevel%");               // сохраняем код СРАЗУ после TH
+            script1.Add("set RC=%errorlevel%");
             script1.Add($"del /f /q /a {Q(pub1)}");
             script1.AddRange(ConfirmLines(ok1));
 
@@ -187,7 +203,7 @@ namespace MEmarket.Services
 
             if (IsStepSuccess(status1, log1))
             {
-                WriteLog("Попытка 1 успешна! Приложение установлено.");
+                WriteLog(isUpdate ? "Попытка 1 успешна! Приложение обновлено." : "Попытка 1 успешна! Приложение установлено.");
                 result.IsSuccess = true;
             }
             else
@@ -203,7 +219,7 @@ namespace MEmarket.Services
             {
                 if (ext == ".appx" || ext == ".appxbundle")
                 {
-                    WriteLog("Попытка 2: установка без подписи (Deployment Mode)...");
+                    WriteLog(isUpdate ? "Попытка 2: обновление без подписи (Deployment Mode)..." : "Попытка 2: установка без подписи (Deployment Mode)...");
 
                     string appxPath = null;
                     string productId = null;
@@ -242,17 +258,14 @@ namespace MEmarket.Services
                         string out2 = TrackLocal(tempLocalFiles, id + "_2.txt");
 
                         var script2 = new List<string>();
-                        // ВАЖНО: файл копируется заново. В старой версии он удалялся в конце
-                        // первой попытки, и TH.exe -e получал несуществующий путь.
                         script2.Add($"copy {Q(appxPath)} {Q(pub2)}");
                         script2.Add($"TH.exe {Q(pub2)} -e {Q(target)} > {Q(out2pre)} 2>&1");
                         script2.Add("sleep 2");
-                        // Листинг папки: по нему видно, что реально распаковалось
                         script2.Add($"dir {Q(target)} >> {Q(out2pre)} 2>&1");
                         script2.Add($"del /f /q /a {Q(target + @"\AppxSignature.p7x")} >> {Q(out2pre)} 2>&1");
                         script2.Add($"del /f /q /a {Q(target + @"\AppxMetadata\AppxSignature.p7x")} >> {Q(out2pre)} 2>&1");
                         script2.Add("sleep 1");
-                        script2.Add($"TH.exe {Q(target + @"\AppxManifest.xml")} -de > {Q(out2)} 2>&1");
+                        script2.Add($"TH.exe {Q(target + @"\AppxManifest.xml")} {deployFlagManifest} > {Q(out2)} 2>&1");
                         script2.Add("set RC=%errorlevel%");
                         script2.Add($"del /f /q /a {Q(pub2)}");
                         script2.AddRange(ConfirmLines(ok2));
@@ -265,7 +278,7 @@ namespace MEmarket.Services
 
                         if (IsStepSuccess(status2, log2))
                         {
-                            WriteLog("Попытка 2 успешна! Приложение установлено через Deployment Mode.");
+                            WriteLog(isUpdate ? "Попытка 2 успешна! Приложение обновлено через Deployment Mode." : "Попытка 2 успешна! Приложение установлено через Deployment Mode.");
                             result.IsSuccess = true;
                         }
                         else
@@ -294,11 +307,14 @@ namespace MEmarket.Services
                 ParseErrorLog(lastDeployLog, result);
                 if (string.IsNullOrEmpty(result.ErrorDescription))
                 {
-                    result.ErrorDescription = failReason ?? "Установка не удалась.";
+                    result.ErrorDescription = failReason ?? (isUpdate ? "Обновление не удалось." : "Установка не удалась.");
                 }
             }
 
-            WriteLog(result.IsSuccess ? "Установка завершена успешно." : "Установка не удалась.");
+            if (isUpdate)
+                WriteLog(result.IsSuccess ? "Обновление завершено успешно." : "Обновление не удалось.");
+            else
+                WriteLog(result.IsSuccess ? "Установка завершена успешно." : "Установка не удалась.");
             result.CleanLog = BuildCleanLog(outputs.ToString());
 
             if (!result.IsSuccess)
@@ -326,7 +342,6 @@ namespace MEmarket.Services
             return await WaitForConfirmAsync(confirmPath, ct);
         }
 
-        /// <summary>Возвращает текст статуса или null при таймауте.</summary>
         private static async Task<string> WaitForConfirmAsync(string path, CancellationToken ct)
         {
             for (int elapsed = 0; elapsed < StepTimeoutSeconds; elapsed++)
@@ -336,7 +351,6 @@ namespace MEmarket.Services
                 if (File.Exists(path))
                 {
                     string status = ReadTextShared(path);
-                    // Файл мог быть уже создан, но ещё пуст - ждём содержимое.
                     if (!string.IsNullOrWhiteSpace(status)) return status;
                 }
 
@@ -398,7 +412,6 @@ namespace MEmarket.Services
                         await src.CopyToAsync(dst);
                     }
 
-                    // Нужен именно пакет приложения: с .exe и манифестом (ресурсные пакеты отсеиваются)
                     string productId = ReadProductIdFromAppx(temp.Path, true);
                     if (!string.IsNullOrEmpty(productId))
                     {
@@ -416,11 +429,6 @@ namespace MEmarket.Services
             }
             return null;
         }
-
-        /// <summary>
-        /// Порядок кандидатов: сначала ARM, затем neutral (по AppxBundleManifest.xml).
-        /// x86/x64 для телефона бесполезны. Если манифест бандла не удалось разобрать - все .appx подряд.
-        /// </summary>
         private static List<string> GetCandidateAppxEntries(ZipFile bundleZip)
         {
             var allAppx = new List<string>();
@@ -474,7 +482,6 @@ namespace MEmarket.Services
             return ordered.Count > 0 ? ordered : allAppx;
         }
 
-        /// <summary>Читает PhoneProductId из AppxManifest.xml внутри .appx. requireExe - отсеивает ресурсные пакеты.</summary>
         private static string ReadProductIdFromAppx(string appxPath, bool requireExe)
         {
             ZipFile zip = null;
@@ -663,7 +670,6 @@ namespace MEmarket.Services
         // Файловые утилиты
         // ------------------------------------------------------------------
 
-        /// <summary>Регистрирует имя временного файла для удаления в finally и возвращает полный путь.</summary>
         private string TrackLocal(List<string> list, string fileName)
         {
             if (!list.Contains(fileName)) list.Add(fileName);

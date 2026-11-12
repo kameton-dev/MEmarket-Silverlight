@@ -841,6 +841,15 @@ namespace MEmarket.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show app banners.
+        /// </summary>
+        public static string ShowBannerToogleHeader {
+            get {
+                return ResourceManager.GetString("ShowBannerToogleHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ошибка при запуске скачивания:.
         /// </summary>
         public static string StartDownloadingError {

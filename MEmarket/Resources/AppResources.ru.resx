@@ -409,4 +409,7 @@ C:\Data\Users\Public\Documents\MEmarket_Error_Log.txt</value>
   <data name="ShowAppButton" xml:space="preserve">
     <value>посмотреть приложение</value>
   </data>
+  <data name="ShowBannerToogleHeader" xml:space="preserve">
+    <value>Показывать баннеры приложений</value>
+  </data>
 </root>

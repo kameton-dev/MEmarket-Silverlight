@@ -353,7 +353,9 @@ namespace MEmarket
                 }
 
                 var bannerUrl = root["banner"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(bannerUrl))
+                var settings = IsolatedStorageSettings.ApplicationSettings;
+                bool showBanner = settings.Contains("ShowBanner") && (bool)settings["ShowBanner"];
+                if (showBanner && !string.IsNullOrWhiteSpace(bannerUrl))
                 {
                     var fullBannerUrl = App.GetFullUrl(appUrl, bannerUrl);
                     if (!string.IsNullOrWhiteSpace(fullBannerUrl))

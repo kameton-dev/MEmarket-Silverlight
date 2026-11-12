@@ -22,6 +22,7 @@ namespace MEmarket
     {
 
         private const string SettingKey = "ShowUpdatesOnTile";
+        private const string ShowBannerSettingKey = "ShowBanner";
 
         public SettingsPage()
         {
@@ -44,6 +45,10 @@ namespace MEmarket
             
             LiveTileToggle.IsChecked = isEnabled;
             UpdateToggleText(isEnabled);
+
+            bool showBanner = settings.Contains(ShowBannerSettingKey) && (bool)settings[ShowBannerSettingKey];
+            ShowBannerToggle.IsChecked = showBanner;
+            UpdateShowBannerToggleText(showBanner);
 
             AppsFilterToggle.IsChecked = App.ShowAppTypeFilter;
             UpdateAppsFilterToggleText(App.ShowAppTypeFilter);
@@ -206,6 +211,33 @@ namespace MEmarket
             var settings = IsolatedStorageSettings.ApplicationSettings;
             settings[SettingKey] = value;
             settings.Save();
+        }
+
+        private void ShowBannerToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            SaveBannerSetting(true);
+            UpdateShowBannerToggleText(true);
+        }
+
+        private void ShowBannerToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SaveBannerSetting(false);
+            UpdateShowBannerToggleText(false);
+        }
+
+        private void SaveBannerSetting(bool value)
+        {
+            var settings = IsolatedStorageSettings.ApplicationSettings;
+            settings[ShowBannerSettingKey] = value;
+            settings.Save();
+        }
+
+        private void UpdateShowBannerToggleText(bool isEnabled)
+        {
+            if (ShowBannerToggle != null)
+            {
+                ShowBannerToggle.Content = isEnabled ? MEmarket.Resources.AppResources.OnText : MEmarket.Resources.AppResources.OffText;
+            }
         }
 
         private void UpdateToggleText(bool isEnabled)

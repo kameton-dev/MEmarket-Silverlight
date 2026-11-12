@@ -409,4 +409,7 @@ Full application installation will not work on your device, but you will be able
   <data name="ShowAppButton" xml:space="preserve">
     <value>show app</value>
   </data>
+  <data name="ShowBannerToogleHeader" xml:space="preserve">
+    <value>Show app banners</value>
+  </data>
 </root>

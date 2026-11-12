@@ -35,7 +35,6 @@ namespace MEmarket.Services
             string[] lines = markdownText.Split('\n');
 
             Paragraph currentParagraph = null;
-            bool lastLineWasEmpty = false;
             bool inBlockquoteParagraph = false;
 
             Brush subtleBrush = null;
@@ -55,23 +54,14 @@ namespace MEmarket.Services
                 if (string.IsNullOrEmpty(line))
                 {
                     currentParagraph = null;
-                    lastLineWasEmpty = true;
                     continue;
                 }
 
                 if (SeparatorRegex.IsMatch(line))
                 {
-                    if (lastLineWasEmpty && richTextBox.Blocks.Count > 0)
-                    {
-                        var spacer = new Paragraph();
-                        spacer.Inlines.Add(new LineBreak());
-                        richTextBox.Blocks.Add(spacer);
-                    }
-
                     var separatorParagraph = CreateSeparatorParagraph(richTextBox);
                     richTextBox.Blocks.Add(separatorParagraph);
                     currentParagraph = null;
-                    lastLineWasEmpty = false;
                     inBlockquoteParagraph = false;
                     continue;
                 }
@@ -88,17 +78,9 @@ namespace MEmarket.Services
                     {
                         string headerText = line.Substring(headerLevel + 1).Trim();
 
-                        if (lastLineWasEmpty && richTextBox.Blocks.Count > 0)
-                        {
-                            var spacer = new Paragraph();
-                            spacer.Inlines.Add(new LineBreak());
-                            richTextBox.Blocks.Add(spacer);
-                        }
-
                         var headerParagraph = CreateHeaderParagraph(headerText, headerLevel);
                         richTextBox.Blocks.Add(headerParagraph);
                         currentParagraph = null;
-                        lastLineWasEmpty = false;
                         inBlockquoteParagraph = false;
                         continue;
                     }
@@ -122,13 +104,6 @@ namespace MEmarket.Services
 
                 if (needNewParagraph)
                 {
-                    if (lastLineWasEmpty && richTextBox.Blocks.Count > 0)
-                    {
-                        var spacer = new Paragraph();
-                        spacer.Inlines.Add(new LineBreak());
-                        richTextBox.Blocks.Add(spacer);
-                    }
-
                     currentParagraph = new Paragraph();
                     inBlockquoteParagraph = isBlockquote;
 
@@ -159,7 +134,6 @@ namespace MEmarket.Services
                     currentParagraph = null;
                 }
 
-                lastLineWasEmpty = false;
             }
         }
 

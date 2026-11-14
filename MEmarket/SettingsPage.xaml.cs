@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using System.IO.IsolatedStorage;
-using Windows.ApplicationModel;
+using System.Xml.Linq;
 
 namespace MEmarket
 {
@@ -280,19 +280,28 @@ namespace MEmarket
         {
             try
             {
-                PackageVersion pv = Package.Current.Id.Version;
+                var manifest = Application.GetResourceStream(new Uri("WMAppManifest.xml", UriKind.Relative));
+                if (manifest == null || manifest.Stream == null)
+                {
+                    AppVersionTextBlock.Text = "0.0.0.0";
+                    return;
+                }
 
-                string formattedVersion = string.Format("{0}.{1}.{2}.{3}",
-                    pv.Major,
-                    pv.Minor,
-                    pv.Build,
-                    pv.Revision);
-
-                AppVersionTextBlock.Text = formattedVersion;
+                using (manifest.Stream)
+                {
+                    var document = XDocument.Load(manifest.Stream);
+                    var appElement = document.Descendants()
+                        .FirstOrDefault(element => element.Name.LocalName == "App");
+                    var versionAttribute = appElement != null ? appElement.Attribute("Version") : null;
+                    AppVersionTextBlock.Text = versionAttribute != null
+                        ? versionAttribute.Value
+                        : "0.0.0.0";
+                }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("Error reading app version: " + ex.Message);
+                AppVersionTextBlock.Text = "0.0.0.0";
             }
         }
     }
